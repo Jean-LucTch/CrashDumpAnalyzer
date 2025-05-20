@@ -1,4 +1,4 @@
-## Version 1.1.0 - 27.10.2024
+## Version 1.1.0 - 27.10.2023
 
 - Feature: New settings icon
 - Feature: Dark mode

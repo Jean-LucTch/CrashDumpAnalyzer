@@ -9,7 +9,7 @@
 
 ### Installation of the Windows debugging tools
 
-1. download the Windows 10 SDK: [Windows 10 SDK Download](https://developer.microsoft.com/de-de/windows/downloads/windows-10-sdk/)
+1. download the Windows SDK (for Windows 11 and earlier): [Windows SDK Download](https://developer.microsoft.com/en-us/windows/downloads/windows-sdk/)
 2. start the installation program.
 3. select **"Debugging Tools for Windows ”** and install them.
 
@@ -37,7 +37,7 @@
 
 ### Installation der Windows Debugging Tools
 
-1. Laden Sie das Windows 10 SDK herunter: [Windows 10 SDK Download](https://developer.microsoft.com/de-de/windows/downloads/windows-10-sdk/)
+1. Laden Sie das Windows SDK (für Windows 11 und früher) herunter: [Windows SDK Download](https://developer.microsoft.com/en-us/windows/downloads/windows-sdk/)
 2. Starten Sie das Installationsprogramm.
 3. Wählen Sie **"Debugging Tools for Windows"** aus und installieren Sie diese.
 
