@@ -1,0 +1,5 @@
+# Ignore compiled translation files
+translations/**/LC_MESSAGES/*.mo
+
+# PyInstaller build output
+/dist/

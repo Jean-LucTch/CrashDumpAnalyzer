@@ -23,6 +23,9 @@ jobs:
         pip install -r requirements.txt
         pip install pyinstaller
 
+    - name: Compile translations
+      run: pybabel compile -d translations
+
     - name: Build executable with PyInstaller
       run: pyinstaller app.spec
 

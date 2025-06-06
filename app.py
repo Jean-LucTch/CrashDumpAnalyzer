@@ -15,7 +15,7 @@ app.jinja_env.add_extension('jinja2.ext.i18n')
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['ANALYSIS_FOLDER'] = 'analyses'
 app.config['BABEL_DEFAULT_LOCALE'] = 'en'
-app.config['BABEL_SUPPORTED_LOCALES'] = ['en', 'de', "nl"]
+app.config['BABEL_SUPPORTED_LOCALES'] = ['en', 'de', 'nl', 'fr']
 VALID_REDIRECTS = [
     '/', 
     '/changelog', 
