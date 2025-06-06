@@ -2,13 +2,15 @@ import importlib
 import sys
 import types
 
+import pytest
 
-def load_app():
-    if 'app' in sys.modules:
-        return importlib.reload(sys.modules['app'])
+
+@pytest.fixture
+def app_module(monkeypatch):
+    """Import ``app`` with minimal stubs so tests run without Flask."""
 
     # Create minimal flask stub
-    flask_stub = types.ModuleType('flask')
+    flask_stub = types.ModuleType("flask")
 
     class Flask:
         def __init__(self, name):
@@ -18,6 +20,7 @@ def load_app():
         def route(self, *args, **kwargs):
             def decorator(func):
                 return func
+
             return decorator
 
         def context_processor(self, func):
@@ -26,15 +29,15 @@ def load_app():
     flask_stub.Flask = Flask
     flask_stub.request = None
     flask_stub.redirect = lambda *a, **k: None
-    flask_stub.url_for = lambda *a, **k: ''
-    flask_stub.render_template = lambda *a, **k: ''
+    flask_stub.url_for = lambda *a, **k: ""
+    flask_stub.render_template = lambda *a, **k: ""
     flask_stub.flash = lambda *a, **k: None
     flask_stub.send_from_directory = lambda *a, **k: None
     flask_stub.session = {}
-    sys.modules['flask'] = flask_stub
+    monkeypatch.setitem(sys.modules, "flask", flask_stub)
 
     # flask_babel stub
-    babel_stub = types.ModuleType('flask_babel')
+    babel_stub = types.ModuleType("flask_babel")
 
     class Babel:
         def __init__(self, app, locale_selector=None):
@@ -43,20 +46,27 @@ def load_app():
 
     babel_stub.Babel = Babel
     babel_stub.gettext = lambda s, *a, **k: s
-    sys.modules['flask_babel'] = babel_stub
+    monkeypatch.setitem(sys.modules, "flask_babel", babel_stub)
 
     # markdown stub
-    sys.modules['markdown'] = types.ModuleType('markdown')
+    monkeypatch.setitem(sys.modules, "markdown", types.ModuleType("markdown"))
 
-    return importlib.import_module('app')
+    module = importlib.import_module("app")
+    try:
+        yield module
+    finally:
+        importlib.reload(module)
 
 
-def test_known_exception_code():
-    app = load_app()
-    assert app.get_exception_description('0xC0000005') == 'Access Violation'
+def test_known_exception_code(app_module):
+    assert app_module.get_exception_description('0xC0000005') == 'Access Violation'
 
 
-def test_unknown_exception_code():
-    app = load_app()
-    assert app.get_exception_description('0xDEADBEEF') == 'Unknown error'
+def test_known_code_case_insensitive(app_module):
+    # also check using lowercase without "0x" prefix
+    assert app_module.get_exception_description('80000003') == 'Breakpoint'
+
+
+def test_unknown_exception_code(app_module):
+    assert app_module.get_exception_description('0xDEADBEEF') == 'Unknown error'
 
