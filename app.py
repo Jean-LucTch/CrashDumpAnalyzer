@@ -15,7 +15,7 @@ app.jinja_env.add_extension('jinja2.ext.i18n')
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['ANALYSIS_FOLDER'] = 'analyses'
 app.config['BABEL_DEFAULT_LOCALE'] = 'en'
-app.config['BABEL_SUPPORTED_LOCALES'] = ['en', 'de', "nl"]
+app.config['BABEL_SUPPORTED_LOCALES'] = ['en', 'de', 'nl', 'fr']
 VALID_REDIRECTS = [
     '/', 
     '/changelog', 
@@ -94,7 +94,7 @@ def analyze_dump(dump_file_path, ticket_number):
     debugger_path = find_cdb_executable()
     if debugger_path is None:
         flash(_('cdb.exe could not be found. Please install the Windows debugging tools.'))
-        return _("Debugger not found"), _("cdb.exe could not be found. Please install the Windows debugging tools.")
+        return _('Debugger not found')
 
     command = f'"{debugger_path}" -z "{dump_file_path}" -c "!analyze -v; q"'
 
