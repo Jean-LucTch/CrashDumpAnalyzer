@@ -94,7 +94,7 @@ def analyze_dump(dump_file_path, ticket_number):
     debugger_path = find_cdb_executable()
     if debugger_path is None:
         flash(_('cdb.exe could not be found. Please install the Windows debugging tools.'))
-        return _("Debugger not found", "Please install the Windows Debugging Tools.")
+        return _('Debugger not found')
 
     command = f'"{debugger_path}" -z "{dump_file_path}" -c "!analyze -v; q"'
 
