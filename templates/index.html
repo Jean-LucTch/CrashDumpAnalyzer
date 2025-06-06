@@ -8,7 +8,6 @@
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
 </head>
 <body>
-  <body>
     <div id="overlay" class="overlay" onclick="toggleSettingsMenu()"></div>
     <!-- Einstellungen-Icon -->
     <div class="settings-icon">
@@ -71,7 +70,6 @@
           }
        });
   </script>  
-</body>
     <h1>{{ _('CrashDumpAnalyzer') }}</h1>
 
     {% with messages = get_flashed_messages() %}
@@ -184,20 +182,5 @@
         }
       }
   </script>
-  <script>
-    // Funktion zum Umschalten des Themes
-    function toggleTheme() {
-        const currentTheme = document.documentElement.getAttribute('data-theme');
-        const newTheme = (currentTheme === 'dark') ? 'light' : 'dark';
-        document.documentElement.setAttribute('data-theme', newTheme);
-        localStorage.setItem('theme', newTheme);
-    }
-
-    // Theme beim Laden der Seite setzen
-    (function() {
-        const savedTheme = localStorage.getItem('theme') || 'light';
-        document.documentElement.setAttribute('data-theme', savedTheme);
-    })();
-</script>
 </body>
 </html>

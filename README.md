@@ -24,9 +24,8 @@
 
 ## Troubleshooting
 
- - Error:** `Debugger not found`
-   - **Solution:** `cdb.exe` could not be found. Please install the Windows debugging tools.
-
+- **Error:** `Debugger not found`
+  - **Solution:** Make sure that `cdb.exe` is installed in the expected location.
 
 ## German:
 
