@@ -1,4 +1,3 @@
-
 import importlib
 import sys
 import types
@@ -6,11 +5,11 @@ import types
 import pytest
 
 
-
 @pytest.fixture
 def app_module(monkeypatch):
-    """Import `app` with minimal stubs so tests run without Flask."""
+    """Import ``app`` with minimal stubs so tests run without Flask."""
 
+    # Create minimal flask stub
     flask_stub = types.ModuleType("flask")
 
     class Flask:
@@ -21,6 +20,7 @@ def app_module(monkeypatch):
         def route(self, *args, **kwargs):
             def decorator(func):
                 return func
+
             return decorator
 
         def context_processor(self, func):
@@ -36,6 +36,7 @@ def app_module(monkeypatch):
     flask_stub.session = {}
     monkeypatch.setitem(sys.modules, "flask", flask_stub)
 
+    # flask_babel stub
     babel_stub = types.ModuleType("flask_babel")
 
     class Babel:
@@ -47,6 +48,7 @@ def app_module(monkeypatch):
     babel_stub.gettext = lambda s, *a, **k: s
     monkeypatch.setitem(sys.modules, "flask_babel", babel_stub)
 
+    # markdown stub
     monkeypatch.setitem(sys.modules, "markdown", types.ModuleType("markdown"))
 
     module = importlib.import_module("app")
@@ -54,10 +56,3 @@ def app_module(monkeypatch):
         yield module
     finally:
         importlib.reload(module)
-
-
-
-def test_analyze_dump_no_debugger(app_module, monkeypatch):
-    monkeypatch.setattr(app_module, 'find_cdb_executable', lambda: None)
-    result = app_module.analyze_dump('dummy', 1)
-    assert result == 'Debugger not found'
