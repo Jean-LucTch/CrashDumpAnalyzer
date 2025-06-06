@@ -24,7 +24,7 @@
 
 ## Troubleshooting
 
-- Error:** `Debugger not found`
+- **Error:** `Debugger not found`
   - **Solution:** Make sure that `cdb.exe` is installed in the expected location.
 
 
