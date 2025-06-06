@@ -9,6 +9,9 @@ on:
       - 'translations/**.po'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   compile:
     runs-on: ubuntu-latest
