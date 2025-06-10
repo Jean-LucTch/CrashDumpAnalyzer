@@ -93,7 +93,11 @@
         </div>
     </form>
 
-    <h2>{{ _('Tickets') }}</h2> 
+    <form method="post" action="{{ url_for('clear_dumps') }}">
+        <button type="submit" class="btn-clear">{{ _('Clear dump files') }}</button>
+    </form>
+
+    <h2>{{ _('Tickets') }}</h2>
     {% if tickets %}
         {% for ticket_num, ticket_info in tickets.items() %}
             <div class="ticket">
