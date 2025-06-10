@@ -1,3 +1,11 @@
+## Version 1.2.0 - 06.06.2025
+
+- Feature: Added French language support
+- Improvement: Automated translation compilation and extended test coverage
+- Improvement: Fixed analyze_dump return value
+- Improvement: Removed duplicate HTML tags
+- Security: Restricted workflow permissions
+
 ## Version 1.1.0 - 27.10.2024
 
 - Feature: New settings icon
