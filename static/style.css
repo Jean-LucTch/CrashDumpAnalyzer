@@ -175,6 +175,14 @@ footer {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
+.admin-form {
+    background-color: #ffffffab;
+    padding: 30px;
+    border: 1px solid #ccc;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
 .upload-form .form-group {
     margin-bottom: 20px;
 }

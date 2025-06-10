@@ -92,7 +92,8 @@
         </div>
     </form>
 
-    <form method="post" action="{{ url_for('clear_dumps') }}">
+    <h2>{{ _('Administrator actions') }}</h2>
+    <form method="post" action="{{ url_for('clear_dumps') }}" class="admin-form upload-form">
         <button type="submit" class="btn-clear">{{ _('Clear dump files') }}</button>
     </form>
 
