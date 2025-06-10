@@ -231,8 +231,24 @@ def view_analysis(ticket_number):
                                analysis_content=analysis_content,
                                ticket_timestamp=ticket_timestamp)
     else:
-        flash (_('Analysis report not found.')) 
+        flash (_('Analysis report not found.'))
         return redirect(url_for('upload_file'))
+
+
+@app.route('/clear_dumps', methods=['POST'])
+def clear_dumps():
+    """Delete all uploaded .dmp files but keep analyses and tickets."""
+    upload_folder = app.config['UPLOAD_FOLDER']
+    for name in os.listdir(upload_folder):
+        if name.lower().endswith('.dmp'):
+            file_path = os.path.join(upload_folder, name)
+            try:
+                os.remove(file_path)
+            except OSError:
+                # Ignore errors so that remaining files can still be deleted
+                pass
+    flash(_('Dump files cleared.'))
+    return redirect(url_for('upload_file'))
 
     
 if __name__ == '__main__':

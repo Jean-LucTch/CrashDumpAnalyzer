@@ -175,6 +175,14 @@ footer {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
+.admin-form {
+    background-color: #ffffffab;
+    padding: 30px;
+    border: 1px solid #ccc;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
 .upload-form .form-group {
     margin-bottom: 20px;
 }
@@ -211,6 +219,20 @@ footer {
 
 .btn-upload:hover {
     background-color: #007B9E;
+}
+
+.btn-clear {
+    padding: 12px 20px;
+    background-color: #f44336;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.btn-clear:hover {
+    background-color: #d32f2f;
 }
 
 /* Stil für die Drop-Zone */

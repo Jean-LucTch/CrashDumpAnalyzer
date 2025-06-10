@@ -4,14 +4,13 @@
     <meta charset="UTF-8">
     <title>{{ _('CrashDumpAnalyzer') }}</title> 
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
 </head>
 <body>
     <div id="overlay" class="overlay" onclick="toggleSettingsMenu()"></div>
     <!-- Einstellungen-Icon -->
-    <div class="settings-icon">
-        <i class="fas fa-cog" onclick="toggleSettingsMenu()"></i>
+    <div class="settings-icon" onclick="toggleSettingsMenu()">
+        &#9881;
     </div>
 
     <!-- Dropdown-Menü -->
@@ -93,7 +92,12 @@
         </div>
     </form>
 
-    <h2>{{ _('Tickets') }}</h2> 
+    <h2>{{ _('Administrator actions') }}</h2>
+    <form method="post" action="{{ url_for('clear_dumps') }}" class="admin-form upload-form">
+        <button type="submit" class="btn-clear">{{ _('Clear dump files') }}</button>
+    </form>
+
+    <h2>{{ _('Tickets') }}</h2>
     {% if tickets %}
         {% for ticket_num, ticket_info in tickets.items() %}
             <div class="ticket">
