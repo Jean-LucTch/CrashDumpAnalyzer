@@ -3,3 +3,5 @@ translations/**/LC_MESSAGES/*.mo
 
 # PyInstaller build output
 /dist/
+/uploads/
+/analyses/
