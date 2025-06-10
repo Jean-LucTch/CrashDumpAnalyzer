@@ -4,14 +4,13 @@
     <meta charset="UTF-8">
     <title>{{ _('CrashDumpAnalyzer') }}</title> 
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
 </head>
 <body>
     <div id="overlay" class="overlay" onclick="toggleSettingsMenu()"></div>
     <!-- Einstellungen-Icon -->
-    <div class="settings-icon">
-        <i class="fas fa-cog" onclick="toggleSettingsMenu()"></i>
+    <div class="settings-icon" onclick="toggleSettingsMenu()">
+        &#9881;
     </div>
 
     <!-- Dropdown-Menü -->
