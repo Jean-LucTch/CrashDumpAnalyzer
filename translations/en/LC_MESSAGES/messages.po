@@ -128,3 +128,15 @@ msgstr "Version"
 msgid "Selected file:"
 msgstr "Selected file:"
 
+#: templates/index.html:95
+msgid "Administrator actions"
+msgstr "Administrator actions"
+
+#: templates/index.html:97
+msgid "Clear dump files"
+msgstr "Clear dump files"
+
+#: app.py:250
+msgid "Dump files cleared."
+msgstr "Dump files cleared."
+
