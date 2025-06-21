@@ -258,7 +258,9 @@ def clear_dumps():
 
     
 if __name__ == '__main__':
-    if getattr(sys, 'frozen', False) and serve is not None:
+    if getattr(sys, 'frozen', False):
+        if serve is None:
+            raise RuntimeError("Waitress is required in frozen mode but is not available.")
         # Running as bundled executable: use production server
         serve(app, host='0.0.0.0', port=5000)
     else:
