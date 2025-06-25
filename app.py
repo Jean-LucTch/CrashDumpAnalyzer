@@ -9,6 +9,12 @@ from config import VERSION
 import sys
 from urllib.parse import urlparse
 
+try:
+    # Waitress is used for the production server when bundled
+    from waitress import serve
+except ImportError:  # pragma: no cover - Waitress not needed in tests
+    serve = None
+
 app = Flask(__name__)
 app.secret_key = '578493092754320oio6547a32653402tzu174321045d414d5g4d5g314d5644315¨ü6448¨$34ö14$üöäiä643*914*64*op416*43146*443*i1*643i*16*443*146*4431*464*31464i4315p453145oi6443165464531'
 app.jinja_env.add_extension('jinja2.ext.i18n')
@@ -252,4 +258,11 @@ def clear_dumps():
 
     
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    if getattr(sys, 'frozen', False):
+        if serve is None:
+            raise RuntimeError("Waitress is required in frozen mode but is not available.")
+        # Running as bundled executable: use production server
+        serve(app, host='0.0.0.0', port=5000)
+    else:
+        # Development mode
+        app.run(host='0.0.0.0', port=5000)

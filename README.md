@@ -19,7 +19,8 @@
 
 1. download the latest version of `CrashDumpAnalyzer.exe` from the GitHub releases.
 2. make sure that `cdb.exe` is installed.
-3. run `CrashDumpAnalyzer.exe`.
+3. run `CrashDumpAnalyzer.exe`. The packaged application starts with a production
+   server powered by Waitress.
 4. open a web browser and navigate to `http://localhost:5000`.
 
 ## Troubleshooting
@@ -46,7 +47,8 @@
 
 1. Laden Sie die neueste Version von `CrashDumpAnalyzer.exe` von den GitHub-Releases herunter.
 2. Stellen Sie sicher, dass `cdb.exe` installiert ist.
-3. Führen Sie `CrashDumpAnalyzer.exe` aus.
+3. Führen Sie `CrashDumpAnalyzer.exe` aus. Im Paket wird automatisch ein
+   Produktionsserver (Waitress) gestartet.
 4. Öffnen Sie einen Webbrowser und navigieren Sie zu `http://localhost:5000`.
 
 ## Fehlerbehebung
