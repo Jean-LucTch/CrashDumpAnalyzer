@@ -1,4 +1,5 @@
 import os
+import secrets
 from flask import Flask, request, redirect, url_for, render_template, flash, send_from_directory, session
 import subprocess
 import markdown
@@ -38,6 +39,13 @@ def is_safe_url(target):
     ref_url = urlparse(request.host_url)
     test_url = urlparse(target)
     return test_url.scheme in ('http', 'https') and ref_url.netloc == test_url.netloc
+
+def get_csrf_token():
+    token = session.get('csrf_token')
+    if not token:
+        token = secrets.token_hex(16)
+        session['csrf_token'] = token
+    return token
 
 def get_locale():
     # Überprüfen, ob eine Sprache in der Session gespeichert ist
@@ -155,7 +163,7 @@ def analyze_dump(dump_file_path, ticket_number):
 
 @app.context_processor
 def inject_get_locale():
-    return dict(get_locale=get_locale)
+    return dict(get_locale=get_locale, csrf_token=get_csrf_token())
 
 @app.route('/', methods=['GET', 'POST'])
 def upload_file():
@@ -244,6 +252,13 @@ def view_analysis(ticket_number):
 @app.route('/clear_dumps', methods=['POST'])
 def clear_dumps():
     """Delete all uploaded .dmp files but keep analyses and tickets."""
+    form_token = request.form.get('csrf_token')
+    session_token = session.get('csrf_token')
+    if form_token is None or session_token is None:
+        flash(_('Invalid CSRF token.'))
+    if not form_token or not session_token or not secrets.compare_digest(session_token, form_token):
+        flash(_('Invalid CSRF token.'))
+        return redirect(url_for('upload_file'))
     upload_folder = app.config['UPLOAD_FOLDER']
     for name in os.listdir(upload_folder):
         if name.lower().endswith('.dmp'):

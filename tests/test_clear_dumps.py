@@ -1,4 +1,5 @@
 import os
+import types
 
 
 def test_clear_dumps(app_module, tmp_path):
@@ -11,6 +12,11 @@ def test_clear_dumps(app_module, tmp_path):
     (upload_dir / "keep.txt").write_text("text")
 
     app_module.app.config['UPLOAD_FOLDER'] = str(upload_dir)
+
+    # set CSRF tokens for stubbed request and session
+    token = 'testtoken'
+    app_module.session['csrf_token'] = token
+    app_module.request = types.SimpleNamespace(form={'csrf_token': token})
 
     # call the function
     app_module.clear_dumps()
