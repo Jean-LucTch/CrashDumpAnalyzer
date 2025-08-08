@@ -9,7 +9,7 @@
 <body>
     <div id="overlay" class="overlay" onclick="toggleSettingsMenu()"></div>
     <!-- Einstellungen-Icon -->
-    <div class="settings-icon" onclick="toggleSettingsMenu()" role="button" tabindex="0" aria-label="Settings">
+    <div class="settings-icon" onclick="toggleSettingsMenu()" onkeydown="handleSettingsIconKeyDown(event)" role="button" tabindex="0" aria-label="Settings">
         &#9881;
     </div>
 
