@@ -11,6 +11,7 @@ import sys
 from urllib.parse import urlparse
 import sqlite3
 
+
 try:
     # Waitress is used for the production server when bundled
     from waitress import serve
@@ -25,6 +26,7 @@ app.config['ANALYSIS_FOLDER'] = 'analyses'
 app.config['BABEL_DEFAULT_LOCALE'] = 'en'
 app.config['BABEL_SUPPORTED_LOCALES'] = ['en', 'de', 'nl', 'fr']
 DB_PATH = os.environ.get('TICKET_DB_PATH', 'tickets.db')
+
 VALID_REDIRECTS = [
     '/', 
     '/changelog', 
@@ -119,6 +121,7 @@ def save_ticket_to_db(ticket_number, ticket):
 
 init_db()
 tickets = load_tickets_from_db()
+
 
 def find_cdb_executable():
     possible_paths = [
@@ -248,6 +251,7 @@ def upload_file():
             flash (_('File uploaded and analyzed. Ticket number:') + f' {ticket_number}')
 
             return redirect(url_for('upload_file'))
+
         else:
             flash (_('Please upload a valid .dmp file'))
             return redirect(validate_url(request.url))
