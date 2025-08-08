@@ -11,6 +11,7 @@ import sys
 from urllib.parse import urlparse
 import sqlite3
 
+
 try:
     # Waitress is used for the production server when bundled
     from waitress import serve
@@ -25,6 +26,7 @@ app.config['ANALYSIS_FOLDER'] = 'analyses'
 app.config['BABEL_DEFAULT_LOCALE'] = 'en'
 app.config['BABEL_SUPPORTED_LOCALES'] = ['en', 'de', 'nl', 'fr']
 DB_PATH = os.environ.get('TICKET_DB_PATH', 'tickets.db')
+
 VALID_REDIRECTS = [
     '/', 
     '/changelog', 
@@ -71,15 +73,6 @@ os.makedirs(app.config['ANALYSIS_FOLDER'], exist_ok=True)
 
 # Datenbankfunktionen für Ticketpersistenz
 def init_db():
-    """
-    Initializes the SQLite database by creating the 'tickets' table if it does not exist.
-
-    This function should be called once at application startup or before any database operations
-    to ensure that the required table structure is present.
-
-    Creates:
-        - tickets (table): Stores ticket_number, exe_name, crash_reason, analysis_file, and timestamp.
-    """
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS tickets (
@@ -105,8 +98,16 @@ def load_tickets_from_db():
         'analysis_file': row[3],
         'timestamp': row[4]
     } for row in rows}
-    next_ticket = max(loaded.keys(), default=0) + 1
-    return loaded, next_ticket
+    return loaded
+
+
+def get_next_ticket_number():
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute('SELECT IFNULL(MAX(ticket_number), 0) + 1 FROM tickets')
+    next_ticket = c.fetchone()[0]
+    conn.close()
+    return next_ticket
 
 
 def save_ticket_to_db(ticket_number, ticket):
@@ -119,7 +120,8 @@ def save_ticket_to_db(ticket_number, ticket):
 
 
 init_db()
-tickets, ticket_number = load_tickets_from_db()
+tickets = load_tickets_from_db()
+
 
 def find_cdb_executable():
     possible_paths = [
@@ -217,7 +219,6 @@ def inject_get_locale():
 
 @app.route('/', methods=['GET', 'POST'])
 def upload_file():
-    global ticket_number
     if request.method == 'POST':
         if 'file' not in request.files:
             flash (_('No file selected')) 
@@ -227,6 +228,8 @@ def upload_file():
             flash (_('No file selected'))
             return redirect(validate_url(request.url))
         if file and file.filename.lower().endswith('.dmp'):
+            ticket_number = get_next_ticket_number()
+
             # Speichern der Datei
             dump_filename = f"dump_{ticket_number}.dmp"
             dump_path = os.path.join(app.config['UPLOAD_FOLDER'], dump_filename)
@@ -246,9 +249,9 @@ def upload_file():
             save_ticket_to_db(ticket_number, ticket_info)
 
             flash (_('File uploaded and analyzed. Ticket number:') + f' {ticket_number}')
-            ticket_number += 1
 
             return redirect(url_for('upload_file'))
+
         else:
             flash (_('Please upload a valid .dmp file'))
             return redirect(validate_url(request.url))
