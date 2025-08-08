@@ -39,6 +39,13 @@ def is_safe_url(target):
     test_url = urlparse(target)
     return test_url.scheme in ('http', 'https') and ref_url.netloc == test_url.netloc
 
+def get_csrf_token():
+    token = session.get('csrf_token')
+    if not token:
+        token = os.urandom(16).hex()
+        session['csrf_token'] = token
+    return token
+
 def get_locale():
     # Überprüfen, ob eine Sprache in der Session gespeichert ist
     lang = session.get('lang', 'en')
@@ -155,7 +162,7 @@ def analyze_dump(dump_file_path, ticket_number):
 
 @app.context_processor
 def inject_get_locale():
-    return dict(get_locale=get_locale)
+    return dict(get_locale=get_locale, csrf_token=get_csrf_token())
 
 @app.route('/', methods=['GET', 'POST'])
 def upload_file():
@@ -244,6 +251,11 @@ def view_analysis(ticket_number):
 @app.route('/clear_dumps', methods=['POST'])
 def clear_dumps():
     """Delete all uploaded .dmp files but keep analyses and tickets."""
+    if request and hasattr(request, 'form'):
+        form_token = request.form.get('csrf_token')
+        if session.get('csrf_token') != form_token:
+            flash(_('Invalid CSRF token.'))
+            return redirect(url_for('upload_file'))
     upload_folder = app.config['UPLOAD_FOLDER']
     for name in os.listdir(upload_folder):
         if name.lower().endswith('.dmp'):

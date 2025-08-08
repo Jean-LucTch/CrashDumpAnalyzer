@@ -9,7 +9,7 @@
 <body>
     <div id="overlay" class="overlay" onclick="toggleSettingsMenu()"></div>
     <!-- Einstellungen-Icon -->
-    <div class="settings-icon" onclick="toggleSettingsMenu()">
+    <div class="settings-icon" onclick="toggleSettingsMenu()" role="button" tabindex="0" aria-label="Settings">
         &#9881;
     </div>
 
@@ -94,6 +94,7 @@
 
     <h2>{{ _('Administrator actions') }}</h2>
     <form method="post" action="{{ url_for('clear_dumps') }}" class="admin-form upload-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <button type="submit" class="btn-clear">{{ _('Clear dump files') }}</button>
     </form>
 
