@@ -43,7 +43,7 @@ def is_safe_url(target):
 def get_csrf_token():
     token = session.get('csrf_token')
     if not token:
-        token = os.urandom(16).hex()
+        token = secrets.token_hex(16)
         session['csrf_token'] = token
     return token
 
@@ -254,6 +254,9 @@ def clear_dumps():
     """Delete all uploaded .dmp files but keep analyses and tickets."""
     form_token = request.form.get('csrf_token')
     session_token = session.get('csrf_token')
+    if form_token is None or session_token is None:
+        flash(_('Invalid CSRF token.'))
+        return redirect(url_for('upload_file'))
     if not form_token or not session_token or not secrets.compare_digest(session_token, form_token):
         flash(_('Invalid CSRF token.'))
         return redirect(url_for('upload_file'))
