@@ -71,6 +71,15 @@ os.makedirs(app.config['ANALYSIS_FOLDER'], exist_ok=True)
 
 # Datenbankfunktionen für Ticketpersistenz
 def init_db():
+    """
+    Initializes the SQLite database by creating the 'tickets' table if it does not exist.
+
+    This function should be called once at application startup or before any database operations
+    to ensure that the required table structure is present.
+
+    Creates:
+        - tickets (table): Stores ticket_number, exe_name, crash_reason, analysis_file, and timestamp.
+    """
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS tickets (
