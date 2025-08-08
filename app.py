@@ -9,6 +9,7 @@ from flask_babel import Babel, gettext as _
 from config import VERSION
 import sys
 from urllib.parse import urlparse
+import sqlite3
 
 try:
     # Waitress is used for the production server when bundled
@@ -23,6 +24,7 @@ app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['ANALYSIS_FOLDER'] = 'analyses'
 app.config['BABEL_DEFAULT_LOCALE'] = 'en'
 app.config['BABEL_SUPPORTED_LOCALES'] = ['en', 'de', 'nl', 'fr']
+DB_PATH = os.environ.get('TICKET_DB_PATH', 'tickets.db')
 VALID_REDIRECTS = [
     '/', 
     '/changelog', 
@@ -67,9 +69,48 @@ def set_language(language):
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['ANALYSIS_FOLDER'], exist_ok=True)
 
-# Globale Variablen für Tickets
-ticket_number = 1
-tickets = {}
+# Datenbankfunktionen für Ticketpersistenz
+def init_db():
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS tickets (
+                    ticket_number INTEGER PRIMARY KEY,
+                    exe_name TEXT,
+                    crash_reason TEXT,
+                    analysis_file TEXT,
+                    timestamp TEXT
+                )''')
+    conn.commit()
+    conn.close()
+
+
+def load_tickets_from_db():
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute('SELECT ticket_number, exe_name, crash_reason, analysis_file, timestamp FROM tickets')
+    rows = c.fetchall()
+    conn.close()
+    loaded = {row[0]: {
+        'exe_name': row[1],
+        'crash_reason': row[2],
+        'analysis_file': row[3],
+        'timestamp': row[4]
+    } for row in rows}
+    next_ticket = max(loaded.keys(), default=0) + 1
+    return loaded, next_ticket
+
+
+def save_ticket_to_db(ticket_number, ticket):
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute('INSERT INTO tickets (ticket_number, exe_name, crash_reason, analysis_file, timestamp) VALUES (?, ?, ?, ?, ?)',
+              (ticket_number, ticket['exe_name'], ticket['crash_reason'], ticket['analysis_file'], ticket['timestamp']))
+    conn.commit()
+    conn.close()
+
+
+init_db()
+tickets, ticket_number = load_tickets_from_db()
 
 def find_cdb_executable():
     possible_paths = [
@@ -186,14 +227,16 @@ def upload_file():
             exe_name, crash_reason = analyze_dump(dump_path, ticket_number)
 
             # Speichern des Tickets
-            tickets[ticket_number] = {
+            ticket_info = {
             'exe_name': exe_name,
             'crash_reason': crash_reason,
             'analysis_file': f"analysis_{ticket_number}.txt",
             'timestamp': datetime.now().strftime('%d.%m.%Y %H:%M:%S')
             }
+            tickets[ticket_number] = ticket_info
+            save_ticket_to_db(ticket_number, ticket_info)
 
-            flash (_('File uploaded and analyzed. Ticket number:') + f' {ticket_number}') 
+            flash (_('File uploaded and analyzed. Ticket number:') + f' {ticket_number}')
             ticket_number += 1
 
             return redirect(url_for('upload_file'))
