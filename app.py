@@ -256,7 +256,6 @@ def clear_dumps():
     session_token = session.get('csrf_token')
     if form_token is None or session_token is None:
         flash(_('Invalid CSRF token.'))
-        return redirect(url_for('upload_file'))
     if not form_token or not session_token or not secrets.compare_digest(session_token, form_token):
         flash(_('Invalid CSRF token.'))
         return redirect(url_for('upload_file'))
