@@ -5,3 +5,4 @@ translations/**/LC_MESSAGES/*.mo
 /dist/
 /uploads/
 /analyses/
+tickets.db
