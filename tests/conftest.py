@@ -6,7 +6,7 @@ import pytest
 
 
 @pytest.fixture
-def app_module(monkeypatch):
+def app_module(tmp_path, monkeypatch):
     """Import ``app`` with minimal stubs so tests run without Flask."""
 
     # Create minimal flask stub
@@ -51,7 +51,11 @@ def app_module(monkeypatch):
     # markdown stub
     monkeypatch.setitem(sys.modules, "markdown", types.ModuleType("markdown"))
 
+    # use a temporary database for tests
+    monkeypatch.setenv('TICKET_DB_PATH', str(tmp_path / 'tickets.db'))
+
     module = importlib.import_module("app")
+    module = importlib.reload(module)
     try:
         yield module
     finally:
