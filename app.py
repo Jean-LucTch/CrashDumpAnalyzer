@@ -159,8 +159,31 @@ def get_exception_description(code):
 def analyze_dump(dump_file_path, ticket_number):
     debugger_path = find_cdb_executable()
     if debugger_path is None:
-        flash(_('cdb.exe could not be found. Please install the Windows debugging tools.'))
-        return _('Debugger not found')
+        try:
+            from minidump import MinidumpFile
+        except Exception:
+            flash(_('cdb.exe could not be found. Please install the Windows debugging tools.'))
+            return _('Debugger not found')
+
+        try:
+            md = MinidumpFile.parse(dump_file_path)
+            analysis_filename = f"analysis_{ticket_number}.txt"
+            analysis_path = os.path.join(app.config['ANALYSIS_FOLDER'], analysis_filename)
+            with open(analysis_path, 'w', encoding='utf-8') as f:
+                f.write(str(md))
+
+            exe_name = md.modules.modules[0].name if md.modules.modules else _("Unknown application")
+            if md.exception:
+                exception_code = f"0x{md.exception.exception_record.exception_code:08X}"
+            else:
+                exception_code = _("Unknown error")
+
+            exception_description = get_exception_description(exception_code)
+            crash_reason = (f"{exception_code} - {exception_description}" if exception_description != _('Unknown error') else exception_code)
+        except Exception as e:
+            exe_name = _("Errors in the analysis")
+            crash_reason = str(e)
+        return exe_name, crash_reason
 
     command = f'"{debugger_path}" -z "{dump_file_path}" -c "!analyze -v; q"'
 
@@ -170,45 +193,36 @@ def analyze_dump(dump_file_path, ticket_number):
         output = output.decode('utf-8', errors='ignore')
         errors = errors.decode('utf-8', errors='ignore')
 
-        # Speichern der Analyseausgabe in einer Datei
         analysis_filename = f"analysis_{ticket_number}.txt"
         analysis_path = os.path.join(app.config['ANALYSIS_FOLDER'], analysis_filename)
         with open(analysis_path, 'w', encoding='utf-8') as f:
             f.write(output)
 
-        # Extrahieren des Anwendungsnamens
         process_name_match = re.search(r'PROCESS_NAME:\s+(\S+)', output)
         if process_name_match:
             exe_name = process_name_match.group(1)
         else:
-            # Fallback auf IMAGE_NAME
             image_name_match = re.search(r'IMAGE_NAME:\s+(\S+)', output)
             exe_name = image_name_match.group(1) if image_name_match else "Unknown application"
 
-        # Extrahieren des Exception-Codes
         exception_code_match = re.search(r'ExceptionCode:\s+(\S+)', output)
         if exception_code_match:
             exception_code = exception_code_match.group(1)
         else:
             exception_code = "Unknown error"
 
-        # Debugging-Ausgabe
-        # print("Extrahierter Exception-Code:", exception_code)
-
-        # Beschreibung erhalten
         exception_description = get_exception_description(exception_code)
 
-        # Kombinieren von Code und Beschreibung
         if exception_description != 'Unknown error':
             crash_reason = f"{exception_code} - {exception_description}"
         else:
             crash_reason = exception_code
 
     except subprocess.TimeoutExpired:
-        exe_name = _("Analysis canceled") 
-        crash_reason = _("The debugger did not respond within the expected time.") 
+        exe_name = _("Analysis canceled")
+        crash_reason = _("The debugger did not respond within the expected time.")
     except Exception as e:
-        exe_name = _("Errors in the analysis") 
+        exe_name = _("Errors in the analysis")
         crash_reason = str(e)
 
     return exe_name, crash_reason

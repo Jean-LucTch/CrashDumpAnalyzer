@@ -57,7 +57,26 @@ def app_module(monkeypatch):
 
 
 
-def test_analyze_dump_no_debugger(app_module, monkeypatch):
+def test_analyze_dump_fallback_minidump(app_module, monkeypatch):
     monkeypatch.setattr(app_module, 'find_cdb_executable', lambda: None)
-    result = app_module.analyze_dump('dummy', 1)
-    assert result == 'Debugger not found'
+
+    class FakeExceptionRecord:
+        exception_code = 0xDEADBEEF
+
+    class FakeException:
+        exception_record = FakeExceptionRecord()
+
+    class FakeDump:
+        exception = FakeException()
+        modules = types.SimpleNamespace(modules=[types.SimpleNamespace(name='foo.exe')])
+
+        def __str__(self):
+            return 'fake dump'
+
+    minidump_stub = types.ModuleType('minidump')
+    minidump_stub.MinidumpFile = types.SimpleNamespace(parse=lambda path: FakeDump())
+    monkeypatch.setitem(sys.modules, 'minidump', minidump_stub)
+
+    exe_name, crash_reason = app_module.analyze_dump('dummy', 1)
+    assert exe_name == 'foo.exe'
+    assert crash_reason.startswith('0xDEADBEEF')
