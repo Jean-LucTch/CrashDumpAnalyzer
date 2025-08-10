@@ -163,7 +163,11 @@ def analyze_dump(dump_file_path, ticket_number):
             from minidump import MinidumpFile
         except Exception:
             flash(_('cdb.exe could not be found. Please install the Windows debugging tools.'))
-            return _('Debugger not found')
+            analysis_filename = f"analysis_{ticket_number}.txt"
+            analysis_path = os.path.join(app.config['ANALYSIS_FOLDER'], analysis_filename)
+            with open(analysis_path, 'w', encoding='utf-8') as f:
+                f.write(_('Debugger not found'))
+            return _("Unknown application"), _('Debugger not found')
 
         try:
             md = MinidumpFile.parse(dump_file_path)

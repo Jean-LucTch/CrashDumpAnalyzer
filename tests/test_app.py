@@ -2,6 +2,7 @@
 import importlib
 import sys
 import types
+import builtins
 
 import pytest
 
@@ -80,3 +81,20 @@ def test_analyze_dump_fallback_minidump(app_module, monkeypatch):
     exe_name, crash_reason = app_module.analyze_dump('dummy', 1)
     assert exe_name == 'foo.exe'
     assert crash_reason.startswith('0xDEADBEEF')
+
+
+def test_analyze_dump_no_debugger(app_module, monkeypatch):
+    monkeypatch.setattr(app_module, 'find_cdb_executable', lambda: None)
+
+    original_import = builtins.__import__
+
+    def fake_import(name, *args, **kwargs):
+        if name == 'minidump':
+            raise ImportError
+        return original_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, '__import__', fake_import)
+
+    exe_name, crash_reason = app_module.analyze_dump('dummy', 1)
+    assert exe_name == 'Unknown application'
+    assert crash_reason == 'Debugger not found'
