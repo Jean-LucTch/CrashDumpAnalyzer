@@ -22,6 +22,7 @@
 3. run `CrashDumpAnalyzer.exe`. The packaged application starts with a production
    server powered by Waitress.
 4. open a web browser and navigate to `http://localhost:5000`.
+5. uploads larger than 200 MB are rejected to prevent connection resets.
 
 Uploaded tickets are stored in a local SQLite database (`tickets.db`) which is
 created automatically on first start. No additional setup is required to retain
@@ -54,6 +55,7 @@ analysis results between restarts.
 3. Führen Sie `CrashDumpAnalyzer.exe` aus. Im Paket wird automatisch ein
    Produktionsserver (Waitress) gestartet.
 4. Öffnen Sie einen Webbrowser und navigieren Sie zu `http://localhost:5000`.
+5. Uploads größer als 200 MB werden abgewiesen, um Verbindungsabbrüche zu vermeiden.
 
 Hochgeladene Tickets werden in einer lokalen SQLite-Datenbank (`tickets.db`)
 gespeichert, die beim ersten Start automatisch erstellt wird. Die Analysen

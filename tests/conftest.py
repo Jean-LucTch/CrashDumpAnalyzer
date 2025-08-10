@@ -26,6 +26,11 @@ def app_module(tmp_path, monkeypatch):
         def context_processor(self, func):
             return func
 
+        def errorhandler(self, *args, **kwargs):
+            def decorator(func):
+                return func
+            return decorator
+
     flask_stub.Flask = Flask
     flask_stub.request = None
     flask_stub.redirect = lambda *a, **k: None

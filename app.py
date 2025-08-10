@@ -1,6 +1,7 @@
 import os
 import secrets
 from flask import Flask, request, redirect, url_for, render_template, flash, send_from_directory, session
+from werkzeug.exceptions import RequestEntityTooLarge
 import subprocess
 import markdown
 import re
@@ -25,6 +26,7 @@ app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['ANALYSIS_FOLDER'] = 'analyses'
 app.config['BABEL_DEFAULT_LOCALE'] = 'en'
 app.config['BABEL_SUPPORTED_LOCALES'] = ['en', 'de', 'nl', 'fr']
+app.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024  # 200 MB upload limit
 DB_PATH = os.environ.get('TICKET_DB_PATH', 'tickets.db')
 
 VALID_REDIRECTS = [
@@ -58,6 +60,12 @@ def get_locale():
     return lang
 
 babel = Babel(app, locale_selector=get_locale)
+
+
+@app.errorhandler(RequestEntityTooLarge)
+def handle_large_file(error):
+    flash(_('File is too large. Maximum size is 200 MB.'))
+    return redirect(url_for('upload_file')), 413
 
 @app.route('/set_language/<language>')
 def set_language(language):
@@ -350,7 +358,7 @@ if __name__ == '__main__':
         if serve is None:
             raise RuntimeError("Waitress is required in frozen mode but is not available.")
         # Running as bundled executable: use production server
-        serve(app, host='0.0.0.0', port=5000)
+        serve(app, host='0.0.0.0', port=5000, max_request_body_size=app.config['MAX_CONTENT_LENGTH'])
     else:
         # Development mode
         app.run(host='0.0.0.0', port=5000)
