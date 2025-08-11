@@ -65,3 +65,23 @@ def app_module(tmp_path, monkeypatch):
         yield module
     finally:
         importlib.reload(module)
+
+
+@pytest.fixture
+def analyzer_module(monkeypatch):
+    """Import ``dump_analyzer`` with stubs for Flask and Babel."""
+
+    flask_stub = types.ModuleType("flask")
+    flask_stub.flash = lambda *a, **k: None
+    monkeypatch.setitem(sys.modules, "flask", flask_stub)
+
+    babel_stub = types.ModuleType("flask_babel")
+    babel_stub.gettext = lambda s, *a, **k: s
+    monkeypatch.setitem(sys.modules, "flask_babel", babel_stub)
+
+    module = importlib.import_module("dump_analyzer")
+    module = importlib.reload(module)
+    try:
+        yield module
+    finally:
+        importlib.reload(module)
