@@ -2,4 +2,3 @@ Flask
 markdown
 flask_babel
 waitress
-minidump

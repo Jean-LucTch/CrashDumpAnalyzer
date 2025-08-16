@@ -6,3 +6,4 @@ translations/**/LC_MESSAGES/*.mo
 /uploads/
 /analyses/
 tickets.db
+/_pycache/
