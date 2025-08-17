@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
 </head>
 <body>
         <div id="overlay" class="overlay" onclick="toggleSettingsMenu()"></div>
         <!-- Einstellungen-Icon -->
-        <div class="settings-icon">
-            <i class="fas fa-cog" onclick="toggleSettingsMenu()"></i>
+        <div class="settings-icon" onclick="toggleSettingsMenu()" onkeydown="handleSettingsIconKeydown(event)" role="button" tabindex="0" aria-label="Settings">
+            &#9881;
         </div>
     
         <!-- Dropdown-Menü -->
@@ -68,9 +67,7 @@
                 menu.classList.remove('open');
               }
            });
-      </script>  
-</body>
-<body>
+      </script>
     <h1>
         {% trans trimmed ticket_number=ticket_number, ticket_timestamp=ticket_timestamp %}
         Analysis report for ticket {{ ticket_number }} from {{ ticket_timestamp }}
@@ -82,7 +79,7 @@
     <p><a href="{{ url_for('upload_file') }}">{{ _('Back to overview') }}</a></p> 
 
     <footer>
-        &copy; 2024 CrashDumpAnalyzer by NickleLP
+        &copy; 2025 CrashDumpAnalyzer by NickleLP
     </footer>
 </body>
 </html>

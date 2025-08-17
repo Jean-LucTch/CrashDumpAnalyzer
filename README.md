@@ -4,8 +4,8 @@
 
 ## Prerequisites
 
-- Windows operating system
-- Installed Windows Debugging Tools (cdb.exe)
+- Windows or Linux operating system
+- On Windows, installing the Windows Debugging Tools (`cdb.exe`) enables extended analysis
 
 ### Installation of the Windows debugging tools
 
@@ -18,22 +18,27 @@
 ## Run the application
 
 1. download the latest version of `CrashDumpAnalyzer.exe` from the GitHub releases.
-2. make sure that `cdb.exe` is installed.
-3. run `CrashDumpAnalyzer.exe`.
+2. on Windows, make sure that `cdb.exe` is installed (optional on other systems).
+3. run `CrashDumpAnalyzer.exe`. The packaged application starts with a production
+   server powered by Waitress.
 4. open a web browser and navigate to `http://localhost:5000`.
+5. uploads larger than 200 MB are rejected to prevent connection resets.
+
+Uploaded tickets are stored in a local SQLite database (`tickets.db`) which is
+created automatically on first start. No additional setup is required to retain
+analysis results between restarts.
 
 ## Troubleshooting
 
-- Error:** `Debugger not found`
+- **Error:** `Debugger not found`
   - **Solution:** Make sure that `cdb.exe` is installed in the expected location.
-
 
 ## German:
 
 ## Voraussetzungen
 
-- Windows-Betriebssystem
-- Installierte Windows Debugging Tools (cdb.exe)
+- Windows- oder Linux-Betriebssystem
+- Unter Windows ermöglichen die Windows Debugging Tools (`cdb.exe`) eine erweiterte Analyse
 
 ### Installation der Windows Debugging Tools
 
@@ -46,9 +51,16 @@
 ## Anwendung ausführen
 
 1. Laden Sie die neueste Version von `CrashDumpAnalyzer.exe` von den GitHub-Releases herunter.
-2. Stellen Sie sicher, dass `cdb.exe` installiert ist.
-3. Führen Sie `CrashDumpAnalyzer.exe` aus.
+2. Unter Windows sicherstellen, dass `cdb.exe` installiert ist (auf anderen Systemen optional).
+3. Führen Sie `CrashDumpAnalyzer.exe` aus. Im Paket wird automatisch ein
+   Produktionsserver (Waitress) gestartet.
 4. Öffnen Sie einen Webbrowser und navigieren Sie zu `http://localhost:5000`.
+5. Uploads größer als 200 MB werden abgewiesen, um Verbindungsabbrüche zu vermeiden.
+
+Hochgeladene Tickets werden in einer lokalen SQLite-Datenbank (`tickets.db`)
+gespeichert, die beim ersten Start automatisch erstellt wird. Die Analysen
+bleiben so auch nach einem Neustart erhalten, ohne dass eine Einrichtung
+erforderlich ist.
 
 ## Fehlerbehebung
 

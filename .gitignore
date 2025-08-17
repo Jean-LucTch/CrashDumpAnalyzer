@@ -1,0 +1,9 @@
+# Ignore compiled translation files
+translations/**/LC_MESSAGES/*.mo
+
+# PyInstaller build output
+/dist/
+/uploads/
+/analyses/
+tickets.db
+__pycache__/

@@ -127,3 +127,15 @@ msgstr "Versie"
 msgid "Selected file:"
 msgstr "Geselecteerd bestand:"
 
+#: templates/index.html:95
+msgid "Administrator actions"
+msgstr "Beheerdersacties"
+
+#: templates/index.html:97
+msgid "Clear dump files"
+msgstr "Dumpbestanden verwijderen"
+
+#: app.py:250
+msgid "Dump files cleared."
+msgstr "Dumpbestanden verwijderd."
+

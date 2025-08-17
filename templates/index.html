@@ -4,15 +4,13 @@
     <meta charset="UTF-8">
     <title>{{ _('CrashDumpAnalyzer') }}</title> 
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
 </head>
 <body>
-  <body>
     <div id="overlay" class="overlay" onclick="toggleSettingsMenu()"></div>
     <!-- Einstellungen-Icon -->
-    <div class="settings-icon">
-        <i class="fas fa-cog" onclick="toggleSettingsMenu()"></i>
+    <div class="settings-icon" onclick="toggleSettingsMenu()" onkeydown="handleSettingsIconKeyDown(event)" role="button" tabindex="0" aria-label="Settings">
+        &#9881;
     </div>
 
     <!-- Dropdown-Menü -->
@@ -24,6 +22,7 @@
             <a href="{{ url_for('set_language', language='en') }}">{{ _('English') }}</a>
             <a href="{{ url_for('set_language', language='de') }}">{{ _('Deutsch') }}</a>
             <a href="{{ url_for('set_language', language='nl') }}">{{ _('Dutch') }}</a>
+            <a href="{{ url_for('set_language', language='fr') }}">Français</a>
             <p>--------------------------------</p>
         </div>
         <!-- Theme-Umschalter -->
@@ -71,7 +70,6 @@
           }
        });
   </script>  
-</body>
     <h1>{{ _('CrashDumpAnalyzer') }}</h1>
 
     {% with messages = get_flashed_messages() %}
@@ -94,7 +92,13 @@
         </div>
     </form>
 
-    <h2>{{ _('Tickets') }}</h2> 
+    <h2>{{ _('Administrator actions') }}</h2>
+    <form method="post" action="{{ url_for('clear_dumps') }}" class="admin-form upload-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="btn-clear">{{ _('Clear dump files') }}</button>
+    </form>
+
+    <h2>{{ _('Tickets') }}</h2>
     {% if tickets %}
         {% for ticket_num, ticket_info in tickets.items() %}
             <div class="ticket">
@@ -111,7 +115,7 @@
     {% endif %}
 
     <footer>
-        <p>&copy; 2024 CrashDumpAnalyzer by NickleLP | {{ _('Version') }} <a href="{{ url_for('changelog') }}">{{ version }}</a></p>
+        <p>&copy; 2025 CrashDumpAnalyzer by NickleLP | {{ _('Version') }} <a href="{{ url_for('changelog') }}">{{ version }}</a></p>
     </footer>
 
     <div id="js-translations" style="display: none;">
@@ -184,20 +188,5 @@
         }
       }
   </script>
-  <script>
-    // Funktion zum Umschalten des Themes
-    function toggleTheme() {
-        const currentTheme = document.documentElement.getAttribute('data-theme');
-        const newTheme = (currentTheme === 'dark') ? 'light' : 'dark';
-        document.documentElement.setAttribute('data-theme', newTheme);
-        localStorage.setItem('theme', newTheme);
-    }
-
-    // Theme beim Laden der Seite setzen
-    (function() {
-        const savedTheme = localStorage.getItem('theme') || 'light';
-        document.documentElement.setAttribute('data-theme', savedTheme);
-    })();
-</script>
 </body>
 </html>
