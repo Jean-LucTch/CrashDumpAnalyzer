@@ -1,17 +1,18 @@
 body {
     font-family: Arial, sans-serif;
-    background-color: #ffffff;
     margin: 20px;
+    background-color: var(--background-color);
+    color: var(--text-color);
 }
 
 h1, h2 {
-    color: #333;
+    color: var(--heading-color);
 }
 
 form {
-    background-color: #fff;
+    background-color: var(--card-bg-color);
     padding: 20px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--border-color);
     margin-bottom: 30px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
@@ -40,8 +41,12 @@ input[type="submit"]:hover {
 :root {
     --background-color: #ffffff;
     --text-color: #000000;
-    --primary-color: #007BFF;
-    --secondary-color: #6c757d;
+    --heading-color: #000000;
+    --link-color: #007BFF;
+    --link-hover-color: #0056b3;
+    --muted-text-color: #6c757d;
+    --border-color: #ccc;
+    --card-bg-color: #ffffffab;
     --ticket-background-color: #f9f9f9;
     --ticket-text-color: #000000;
     /* Weitere Variablen nach Bedarf */
@@ -50,26 +55,25 @@ input[type="submit"]:hover {
 /* Variablen für Dark Mode */
 [data-theme="dark"] {
     --background-color: #121212;
-    --text-color: #ffffff;
-    --primary-color: #1e90ff;
-    --secondary-color: #aaaaaa;
+    --text-color: #e0e0e0;
+    --heading-color: #ffffff;
+    --link-color: #1e90ff;
+    --link-hover-color: #63a4ff;
+    --muted-text-color: #bbbbbb;
+    --border-color: #333333;
+    --card-bg-color: #1e1e1e;
     --ticket-background-color: #1e1e1e;
     --ticket-text-color: #ffffff;
     /* Weitere Variablen nach Bedarf */
 }
 
 /* Anwendung der Variablen */
-body {
-    background-color: var(--background-color);
-    color: var(--text-color);
-}
-
 a {
-    color: var(--primary-color);
+    color: var(--link-color);
 }
 
-.header, .footer {
-    background-color: var(--secondary-color);
+a:hover {
+    color: var(--link-hover-color);
 }
 
 /* Schalter-Styling */
@@ -111,7 +115,7 @@ a {
 }
 
 input:checked + .slider {
-    background-color: var(--primary-color);
+    background-color: var(--link-color);
 }
 
 input:checked + .slider:before {
@@ -122,14 +126,14 @@ input:checked + .slider:before {
 .ticket {
     background-color: var(--ticket-background-color);
     color: var(--ticket-text-color);
-    border: 1px solid var(--secondary-color);
+    border: 1px solid var(--border-color);
     border-radius: 5px;
     padding: 10px;
     margin-bottom: 10px;
 }
 
 .ticket a {
-    color: var(--primary-color);
+    color: var(--link-color);
     text-decoration: none;
 }
 
@@ -149,36 +153,37 @@ input:checked + .slider:before {
 
 .ticket-timestamp {
     font-size: 0.9em;
-    color: var(--secondary-color);
+    color: var(--muted-text-color);
 }
 
 
+
 .message {
-    color: #000000;
+    color: var(--text-color);
     background-color: #2dff038c;
     padding: 10px;
     margin-bottom: 20px;
-    border: 1px solid #000000;
+    border: 1px solid var(--border-color);
 }
 
 footer {
     text-align: center;
     margin-top: 40px;
-    color: #777;
+    color: var(--muted-text-color);
 }
 
 .upload-form {
-    background-color: #ffffffab;
+    background-color: var(--card-bg-color);
     padding: 30px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--border-color);
     margin-bottom: 30px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .admin-form {
-    background-color: #ffffffab;
+    background-color: var(--card-bg-color);
     padding: 30px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--border-color);
     margin-bottom: 30px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
@@ -237,10 +242,10 @@ footer {
 
 /* Stil für die Drop-Zone */
 #drop-zone {
-    border: 2px dashed #ccc;
+    border: 2px dashed var(--border-color);
     padding: 30px;
     text-align: center;
-    color: #ccc;
+    color: var(--muted-text-color);
     margin-bottom: 20px;
     position: relative;
     cursor: pointer;
@@ -281,7 +286,7 @@ footer {
     margin-top: 30px;
 }
 .changelog-content h3 {
-    color: #333;
+    color: var(--heading-color);
 }
 
 .changelog-content ul {
@@ -313,12 +318,13 @@ footer {
 
 /* Einstellungen-Menü */
 /* Einstellungen-Menü */
+
 .settings-menu {
     position: fixed;
     top: 50px;
     right: 10px;
     background-color: var(--background-color);
-    border: 1px solid var(--secondary-color);
+    border: 1px solid var(--border-color);
     border-radius: 5px;
     padding: 10px;
     width: 200px;
@@ -340,7 +346,7 @@ footer {
 .settings-menu .language-selector a {
     display: block;
     margin: 5px 0;
-    color: var(--text-color);
+    color: var(--link-color);
     text-decoration: none;
 }
 
