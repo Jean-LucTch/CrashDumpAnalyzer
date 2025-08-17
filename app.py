@@ -53,9 +53,9 @@ def get_csrf_token():
     return token
 
 def get_locale():
-    # Überprüfen, ob eine Sprache in der Session gespeichert ist
+    # Check if a language is stored in the session
     lang = session.get('lang', 'en')
-    #print(f"Aktuelle Sprache: {lang}")
+    #print(f"Current language: {lang}")
     return lang
 
 babel = Babel(app, locale_selector=get_locale)
@@ -74,11 +74,11 @@ def set_language(language):
         referrer = url_for('upload_file')
     return redirect(referrer)
 
-# Erstellen der Verzeichnisse, falls sie nicht existieren
+# Create directories if they do not exist
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['ANALYSIS_FOLDER'], exist_ok=True)
 
-# Datenbankfunktionen für Ticketpersistenz
+# Database functions for ticket persistence
 def init_db():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
@@ -148,15 +148,15 @@ def upload_file():
         if file and file.filename.lower().endswith('.dmp'):
             ticket_number = get_next_ticket_number()
 
-            # Speichern der Datei
+            # Save the file
             dump_filename = f"dump_{ticket_number}.dmp"
             dump_path = os.path.join(app.config['UPLOAD_FOLDER'], dump_filename)
             file.save(dump_path)
 
-            # Analysieren der Dump-Datei (Ticketnummer übergeben)
+            # Analyze the dump file (ticket number is passed)
             exe_name, crash_reason = analyze_dump(dump_path, ticket_number, app.config['ANALYSIS_FOLDER'])
 
-            # Speichern des Tickets
+            # Save the ticket
             ticket_info = {
             'exe_name': exe_name,
             'crash_reason': crash_reason,
@@ -173,17 +173,17 @@ def upload_file():
         else:
             flash (_('Please upload a valid .dmp file'))
             return redirect(validate_url(request.url))
-    #print(f"Aktuelle Sprache in der Ansicht: {get_locale()}") 
+    #print(f"Current language in the view: {get_locale()}") 
     return render_template('index.html', tickets=tickets, version=VERSION, get_locale=get_locale)
 
 @app.route('/changelog')
 def changelog():
-    # Bestimmen des Basisverzeichnisses
+    # Determine the base directory
     if getattr(sys, 'frozen', False):
-        # Anwendung ist als ausführbare Datei gebündelt
+        # Application is bundled as an executable
         application_path = sys._MEIPASS
     else:
-        # Anwendung wird normal ausgeführt
+        # Application is running normally
         application_path = os.path.dirname(os.path.abspath(__file__))
 
     changelog_path = os.path.join(application_path, 'changelog.md')
@@ -194,7 +194,7 @@ def changelog():
     with open(changelog_path, 'r', encoding='utf-8') as f:
         content = f.read()
 
-    # Konvertieren von Markdown zu HTML
+    # Convert Markdown to HTML
     changelog_html = markdown.markdown(content)
     return render_template('changelog.html', changelog=changelog_html, version=VERSION)
 

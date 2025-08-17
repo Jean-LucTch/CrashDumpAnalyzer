@@ -1,10 +1,19 @@
-## Version 1.2.0 - 06.06.2025
+## Version 1.2.0 – 17.08.2025
 
-- Feature: Added French language support
-- Improvement: Automated translation compilation and extended test coverage
-- Improvement: Fixed analyze_dump return value
-- Improvement: Removed duplicate HTML tags
-- Security: Restricted workflow permissions
+### New Features
+
+- Implemented cross-platform crash dump analysis (internal analyzer)
+- Added detailed dump information: process name, exception code, and system information
+- Introduced ability to delete previously uploaded dump files
+- Added SQLite database for ticket persistence
+- Integrated Waitress server for production releases (more stable web delivery)
+- Enhanced CSRF protection and improved accessibility
+
+### Refactoring & Maintenance
+
+- Moved dump analysis into a separate module (better structure and maintainability)
+- Limited upload size to prevent connection resets
+- Bumped version to 1.2.0 and updated changelog
 
 ## Version 1.1.0 - 27.10.2024
 
@@ -36,12 +45,10 @@
 - New language: English can now be used as a language
 - Bugfixes
 
-
 ## Version 1.0.1 - 28.09.2024
 
 - Bugfix if a capitalized .DMP file was uploaded, it was displayed as invalid. This has been fixed
 - Changelogs are now in English
-
 
 ## Version 1.0.0 - 25.09.2024
 
