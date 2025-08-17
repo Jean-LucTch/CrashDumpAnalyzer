@@ -1,15 +1,15 @@
 import os
 import secrets
 from flask import Flask, request, redirect, url_for, render_template, flash, send_from_directory, session
-import subprocess
+from werkzeug.exceptions import RequestEntityTooLarge
 import markdown
-import re
 from datetime import datetime
 from flask_babel import Babel, gettext as _
 from config import VERSION
 import sys
 from urllib.parse import urlparse
 import sqlite3
+from dump_analyzer import analyze_dump
 
 
 try:
@@ -25,6 +25,7 @@ app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['ANALYSIS_FOLDER'] = 'analyses'
 app.config['BABEL_DEFAULT_LOCALE'] = 'en'
 app.config['BABEL_SUPPORTED_LOCALES'] = ['en', 'de', 'nl', 'fr']
+app.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024  # 200 MB upload limit
 DB_PATH = os.environ.get('TICKET_DB_PATH', 'tickets.db')
 
 VALID_REDIRECTS = [
@@ -58,6 +59,12 @@ def get_locale():
     return lang
 
 babel = Babel(app, locale_selector=get_locale)
+
+
+@app.errorhandler(RequestEntityTooLarge)
+def handle_large_file(error):
+    flash(_('File is too large. Maximum size is 200 MB.'))
+    return redirect(url_for('upload_file')), 413
 
 @app.route('/set_language/<language>')
 def set_language(language):
@@ -123,95 +130,6 @@ init_db()
 tickets = load_tickets_from_db()
 
 
-def find_cdb_executable():
-    possible_paths = [
-        r'C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\cdb.exe',
-        r'C:\Program Files\Windows Kits\10\Debuggers\x64\cdb.exe',
-        # Weitere mögliche Pfade hinzufügen
-    ]
-    for path in possible_paths:
-        if os.path.exists(path):
-            return path
-    return None
-
-def get_exception_description(code):
-    exception_codes = {
-        '0xC0000005': 'Access Violation',
-        '0x80000003': 'Breakpoint',
-        '0x80000004': 'Single Step',
-        '0xC0000094': 'Integer division by zero',
-        '0xC0000095': 'Integer overflow',
-        '0xC00000FD': 'Stack Overflow',
-        '0xC0000135': 'DLL not found',
-        '0xC0000139': 'Entry point not found',
-        '0xC0000142': 'DLL initialization failed',
-        '0xE0434352': '.NET exception',
-        '0xC0000409': 'Stack buffer overflow',
-        # Weitere Exception-Codes können hier hinzugefügt werden
-    }
-    code = code.strip()
-    if code.lower().startswith('0x'):
-        code = '0x' + code[2:].upper()
-    else:
-        code = '0x' + code.upper()
-    return exception_codes.get(code, _('Unknown error'))
-
-def analyze_dump(dump_file_path, ticket_number):
-    debugger_path = find_cdb_executable()
-    if debugger_path is None:
-        flash(_('cdb.exe could not be found. Please install the Windows debugging tools.'))
-        return _('Debugger not found')
-
-    command = f'"{debugger_path}" -z "{dump_file_path}" -c "!analyze -v; q"'
-
-    try:
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        output, errors = process.communicate(timeout=60)
-        output = output.decode('utf-8', errors='ignore')
-        errors = errors.decode('utf-8', errors='ignore')
-
-        # Speichern der Analyseausgabe in einer Datei
-        analysis_filename = f"analysis_{ticket_number}.txt"
-        analysis_path = os.path.join(app.config['ANALYSIS_FOLDER'], analysis_filename)
-        with open(analysis_path, 'w', encoding='utf-8') as f:
-            f.write(output)
-
-        # Extrahieren des Anwendungsnamens
-        process_name_match = re.search(r'PROCESS_NAME:\s+(\S+)', output)
-        if process_name_match:
-            exe_name = process_name_match.group(1)
-        else:
-            # Fallback auf IMAGE_NAME
-            image_name_match = re.search(r'IMAGE_NAME:\s+(\S+)', output)
-            exe_name = image_name_match.group(1) if image_name_match else "Unknown application"
-
-        # Extrahieren des Exception-Codes
-        exception_code_match = re.search(r'ExceptionCode:\s+(\S+)', output)
-        if exception_code_match:
-            exception_code = exception_code_match.group(1)
-        else:
-            exception_code = "Unknown error"
-
-        # Debugging-Ausgabe
-        # print("Extrahierter Exception-Code:", exception_code)
-
-        # Beschreibung erhalten
-        exception_description = get_exception_description(exception_code)
-
-        # Kombinieren von Code und Beschreibung
-        if exception_description != 'Unknown error':
-            crash_reason = f"{exception_code} - {exception_description}"
-        else:
-            crash_reason = exception_code
-
-    except subprocess.TimeoutExpired:
-        exe_name = _("Analysis canceled") 
-        crash_reason = _("The debugger did not respond within the expected time.") 
-    except Exception as e:
-        exe_name = _("Errors in the analysis") 
-        crash_reason = str(e)
-
-    return exe_name, crash_reason
 
 @app.context_processor
 def inject_get_locale():
@@ -236,7 +154,7 @@ def upload_file():
             file.save(dump_path)
 
             # Analysieren der Dump-Datei (Ticketnummer übergeben)
-            exe_name, crash_reason = analyze_dump(dump_path, ticket_number)
+            exe_name, crash_reason = analyze_dump(dump_path, ticket_number, app.config['ANALYSIS_FOLDER'])
 
             # Speichern des Tickets
             ticket_info = {
@@ -332,7 +250,7 @@ if __name__ == '__main__':
         if serve is None:
             raise RuntimeError("Waitress is required in frozen mode but is not available.")
         # Running as bundled executable: use production server
-        serve(app, host='0.0.0.0', port=5000)
+        serve(app, host='0.0.0.0', port=5000, max_request_body_size=app.config['MAX_CONTENT_LENGTH'])
     else:
         # Development mode
         app.run(host='0.0.0.0', port=5000)
