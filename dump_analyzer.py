@@ -457,7 +457,7 @@ def extract_memory_info(dump_data):
             rva = streams[16]['rva']
             header_size, entry_size, count = struct.unpack_from('<IIQ', dump_data, rva)
             offset = rva + header_size
-            type_map = {0x20000: 'MEM_PRIVATE', 0x40000: 'MEM_MAPPED', 0x1000000: 'MEM_IMAGE'}
+            type_map = {MEM_PRIVATE: 'MEM_PRIVATE', MEM_MAPPED: 'MEM_MAPPED', MEM_IMAGE: 'MEM_IMAGE'}
             for _ in range(min(count, 5)):
                 if offset + entry_size > len(dump_data):
                     break
