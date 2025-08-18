@@ -426,7 +426,7 @@ def extract_callstack_info(dump_data):
 
         stack_data = parse_thread_stack(dump_data, streams, thread_id)
         if stack_data:
-            for i in range(0, min(len(stack_data), ptr_size * 9), ptr_size):
+            for i in range(0, min(len(stack_data), ptr_size * MAX_STACK_ADDRESSES), ptr_size):
                 fmt = '<Q' if ptr_size == 8 else '<I'
                 addr = struct.unpack_from(fmt, stack_data, i)[0]
                 addresses.append(addr)
