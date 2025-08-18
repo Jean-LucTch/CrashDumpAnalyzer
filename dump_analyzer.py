@@ -361,7 +361,16 @@ def parse_exception_stream(dump_data, streams):
     try:
         thread_id = struct.unpack_from('<I', dump_data, rva)[0]
         exception_code = struct.unpack_from('<I', dump_data, rva + 8)[0]
-        exception_address = struct.unpack_from('<Q', dump_data, rva + 8 + 16)[0]
+        pointer_size = get_pointer_size(dump_data, streams)
+        # MINIDUMP_EXCEPTION record starts at rva + 8
+        # ExceptionAddress is at offset 16 for x64 (pointer_size=8), offset 12 for x86 (pointer_size=4)
+        exception_record_offset = rva + 8
+        if pointer_size == 8:
+            exception_address_offset = exception_record_offset + 16
+            exception_address = struct.unpack_from('<Q', dump_data, exception_address_offset)[0]
+        else:
+            exception_address_offset = exception_record_offset + 12
+            exception_address = struct.unpack_from('<I', dump_data, exception_address_offset)[0]
         return thread_id, exception_code, exception_address
     except struct.error:
         return None, None, None
