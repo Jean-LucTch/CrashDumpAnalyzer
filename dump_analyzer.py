@@ -452,7 +452,7 @@ def extract_memory_info(dump_data):
             for _ in range(min(count, 5)):
                 if offset + entry_size > len(dump_data):
                     break
-                base, _, _, _, region_size, state, protect, mtype, _ = struct.unpack_from('<QQIIQIII I', dump_data, offset)
+                base, _, _, _, region_size, state, protect, mtype, _ = struct.unpack_from('<QQIIQIIII', dump_data, offset)
                 mem_info.append({
                     'address': f"0x{base:016X}",
                     'size': str(region_size),
