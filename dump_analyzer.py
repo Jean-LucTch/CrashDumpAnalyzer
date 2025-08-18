@@ -301,198 +301,267 @@ def is_valid_text(text):
     
     return True
 
+def parse_minidump_streams(dump_data):
+    """Parse the minidump header and return available streams"""
+    try:
+        if len(dump_data) < 32:
+            return {}
+        header = struct.unpack_from('<IIIIIIQ', dump_data, 0)
+        signature, _, num_streams, dir_rva, _, _, _ = header
+        if signature != 0x504d444d:  # 'MDMP'
+            return {}
+        if dir_rva + num_streams * 12 > len(dump_data):
+            return {}
+        streams = {}
+        for i in range(num_streams):
+            off = dir_rva + i * 12
+            stream_type, data_size, rva = struct.unpack_from('<III', dump_data, off)
+            if rva + data_size <= len(dump_data):
+                streams[stream_type] = {'rva': rva, 'size': data_size}
+        return streams
+    except struct.error:
+        return {}
+
+
+def read_utf16le_string(data, rva):
+    """Read a UTF-16LE string from the given RVA"""
+    try:
+        length = struct.unpack_from('<I', data, rva)[0]
+        start = rva + 4
+        raw = data[start:start + length]
+        return raw.decode('utf-16-le', errors='ignore')
+    except Exception:
+        return None
+
+
+def parse_modules_from_streams(dump_data, streams):
+    modules = []
+    if 4 not in streams:
+        return modules
+    rva = streams[4]['rva']
+    try:
+        count = struct.unpack_from('<I', dump_data, rva)[0]
+        offset = rva + 4
+        for _ in range(count):
+            if offset + 108 > len(dump_data):
+                break
+            base, size, checksum, timestamp, name_rva = struct.unpack_from('<QIIII', dump_data, offset)
+            name = read_utf16le_string(dump_data, name_rva) or 'Unknown'
+            modules.append({'name': name, 'base': base, 'size': size})
+            offset += 108
+    except struct.error:
+        pass
+    return modules
+
+
+def parse_exception_stream(dump_data, streams):
+    if 6 not in streams:
+        return None, None, None
+    rva = streams[6]['rva']
+    try:
+        thread_id = struct.unpack_from('<I', dump_data, rva)[0]
+        exception_code = struct.unpack_from('<I', dump_data, rva + 8)[0]
+        pointer_size = get_pointer_size(dump_data, streams)
+        # MINIDUMP_EXCEPTION record starts at rva + 8
+        # ExceptionAddress is at offset 16 for x64 (pointer_size=8), offset 12 for x86 (pointer_size=4)
+        exception_record_offset = rva + 8
+        if pointer_size == 8:
+            exception_address_offset = exception_record_offset + 16
+            exception_address = struct.unpack_from('<Q', dump_data, exception_address_offset)[0]
+        else:
+            exception_address_offset = exception_record_offset + 12
+            exception_address = struct.unpack_from('<I', dump_data, exception_address_offset)[0]
+        return thread_id, exception_code, exception_address
+    except struct.error:
+        return None, None, None
+
+
+def get_pointer_size(dump_data, streams):
+    if 7 in streams:
+        try:
+            arch = struct.unpack_from('<H', dump_data, streams[7]['rva'])[0]
+            if arch in (0, 5):  # x86 or ARM
+                return 4
+        except struct.error:
+            pass
+    return 8
+
+
+def parse_thread_stack(dump_data, streams, thread_id):
+    if 3 not in streams:
+        return None
+    rva = streams[3]['rva']
+    try:
+        count = struct.unpack_from('<I', dump_data, rva)[0]
+        offset = rva + 4
+        for _ in range(count):
+            if offset + 48 > len(dump_data):
+                break
+            tid = struct.unpack_from('<I', dump_data, offset)[0]
+            if tid == thread_id:
+                stack_start = struct.unpack_from('<Q', dump_data, offset + 24)[0]
+                stack_size = struct.unpack_from('<I', dump_data, offset + 32)[0]
+                stack_rva = struct.unpack_from('<I', dump_data, offset + 36)[0]
+                end = stack_rva + stack_size
+                if end <= len(dump_data):
+                    return dump_data[stack_rva:end]
+                return None
+            offset += 48
+    except struct.error:
+        pass
+    return None
+
 
 def extract_callstack_info(dump_data):
     """Extract callstack information from minidump data"""
     try:
-        dump_str = dump_data.decode('utf-8', errors='ignore')
-        
-        # Look for callstack patterns in the dump
-        callstack_patterns = [
-            r'Call Site\s+(\S+)\s+(\S+)',
-            r'(\S+)\s+(\S+)\s+(\S+)\s+(\S+)',  # Generic pattern for stack frames
-            r'(\S+)\s+(\S+)\s+(\S+)',  # Simpler pattern
-        ]
-        
+        streams = parse_minidump_streams(dump_data)
+        thread_id, _, exception_address = parse_exception_stream(dump_data, streams)
+        modules = parse_modules_from_streams(dump_data, streams)
+        ptr_size = get_pointer_size(dump_data, streams)
+
+        addresses = []
+        if exception_address is not None:
+            addresses.append(exception_address)
+
+        stack_data = parse_thread_stack(dump_data, streams, thread_id)
+        if stack_data:
+            for i in range(0, min(len(stack_data), ptr_size * MAX_STACK_ADDRESSES), ptr_size):
+                fmt = '<Q' if ptr_size == 8 else '<I'
+                addr = struct.unpack_from(fmt, stack_data, i)[0]
+                addresses.append(addr)
+
         callstack_info = []
-        for pattern in callstack_patterns:
-            matches = re.findall(pattern, dump_str)
-            if matches:
-                for match in matches:
-                    if len(match) >= 2:
-                        # Validate that we have reasonable data (no garbage characters)
-                        address = match[0] if match[0].startswith('0x') and len(match[0]) <= 20 else 'Unknown'
-                        function = match[1] if is_valid_text(match[1]) else 'Unknown'
-                        module = match[2] if len(match) > 2 and is_valid_text(match[2]) else 'Unknown'
-                        
-                        callstack_info.append({
-                            'address': address,
-                            'function': function,
-                            'module': module
-                        })
-                break
-        
-        return callstack_info[:10]  # Maximum 10 stack frames
-    except:
+        for addr in addresses[:10]:
+            module_name = 'Unknown'
+            for m in modules:
+                if m['base'] <= addr < m['base'] + m['size']:
+                    module_name = m['name']
+                    break
+            callstack_info.append({
+                'address': f"0x{addr:016X}" if ptr_size == 8 else f"0x{addr:08X}",
+                'function': 'Unknown',
+                'module': module_name
+            })
+        return callstack_info
+    except Exception:
         return []
 
 
 def extract_memory_info(dump_data):
-    """Extract memory information from minidump data"""
+    """Extract memory region information from minidump data"""
     try:
-        dump_str = dump_data.decode('utf-8', errors='ignore')
-        
-        # Look for memory information patterns
-        memory_patterns = [
-            r'Memory\s+(\S+)\s+(\S+)',
-            r'(\S+)\s+(\S+)\s+(\S+)\s+(\S+)',  # Generic memory pattern
-        ]
-        
-        memory_info = []
-        for pattern in memory_patterns:
-            matches = re.findall(pattern, dump_str)
-            if matches:
-                for match in matches:
-                    if len(match) >= 2:
-                        # Validate that we have reasonable data
-                        address = match[0] if match[0].startswith('0x') and len(match[0]) <= 20 else 'Unknown'
-                        size = match[1] if is_valid_text(match[1]) else 'Unknown'
-                        mem_type = match[2] if len(match) > 2 and is_valid_text(match[2]) else 'Unknown'
-                        
-                        memory_info.append({
-                            'address': address,
-                            'size': size,
-                            'type': mem_type
-                        })
-                break
-        
-        return memory_info[:5]  # Maximum 5 memory regions
-    except:
+        streams = parse_minidump_streams(dump_data)
+        mem_info = []
+        if 16 in streams:
+            rva = streams[16]['rva']
+            header_size, entry_size, count = struct.unpack_from('<IIQ', dump_data, rva)
+            offset = rva + header_size
+            type_map = {MEM_PRIVATE: 'MEM_PRIVATE', MEM_MAPPED: 'MEM_MAPPED', MEM_IMAGE: 'MEM_IMAGE'}
+            for _ in range(min(count, 5)):
+                if offset + entry_size > len(dump_data):
+                    break
+                base, _, _, _, region_size, state, protect, mtype, _ = struct.unpack_from('<QQIIQIIII', dump_data, offset)
+                mem_info.append({
+                    'address': f"0x{base:016X}",
+                    'size': str(region_size),
+                    'type': type_map.get(mtype, 'Unknown')
+                })
+                offset += entry_size
+        elif 5 in streams:
+            rva = streams[5]['rva']
+            count = struct.unpack_from('<I', dump_data, rva)[0]
+            offset = rva + 4
+            for _ in range(min(count, 5)):
+                if offset + 16 > len(dump_data):
+                    break
+                start, size, _rva = struct.unpack_from('<QII', dump_data, offset)
+                mem_info.append({'address': f"0x{start:016X}", 'size': str(size), 'type': 'Unknown'})
+                offset += 16
+        return mem_info
+    except Exception:
         return []
 
 
 def extract_process_name(dump_data):
     """Extract process name from minidump data"""
     try:
-        # Look for .exe filenames in the dump
-        # Convert to string and search for .exe
+        streams = parse_minidump_streams(dump_data)
+        modules = parse_modules_from_streams(dump_data, streams)
+        if modules:
+            return modules[0]['name']
+    except Exception:
+        pass
+    try:
         dump_str = dump_data.decode('utf-8', errors='ignore')
-        
-        # Look for .exe files
-        exe_patterns = [
-            r'([A-Za-z0-9_\-\.]+\.exe)',
-            r'([A-Za-z0-9_\-\.]+\.dll)',
-        ]
-        
+        exe_patterns = [r'([A-Za-z0-9_\-\.]+\.exe)', r'([A-Za-z0-9_\-\.]+\.dll)']
         for pattern in exe_patterns:
             matches = re.findall(pattern, dump_str)
             if matches:
-                # Filter known system files
                 system_files = ['ntdll.dll', 'kernel32.dll', 'user32.dll', 'gdi32.dll']
                 for match in matches:
                     if match.lower() not in system_files:
                         return match
-        return None
-    except:
-        return None
+    except Exception:
+        pass
+    return None
 
 
 def extract_exception_code(dump_data):
     """Extract exception code from minidump data"""
     try:
-        # Look for exception codes in the dump
+        streams = parse_minidump_streams(dump_data)
+        _, exception_code, _ = parse_exception_stream(dump_data, streams)
+        if exception_code is not None:
+            return f"0x{exception_code:08X}"
+    except Exception:
+        pass
+    try:
         dump_str = dump_data.decode('utf-8', errors='ignore')
-        
-        # Look for hexadecimal exception codes
-        exception_patterns = [
-            r'0x[0-9A-Fa-f]{8}',  # 8-digit hex codes
-            r'0x[0-9A-Fa-f]{7}',  # 7-digit hex codes
-        ]
-        
+        exception_patterns = [r'0x[0-9A-Fa-f]{8}', r'0x[0-9A-Fa-f]{7}']
         for pattern in exception_patterns:
             matches = re.findall(pattern, dump_str)
             if matches:
-                # Filter known exception codes
-                known_codes = ['0xC0000005', '0x80000003', '0x80000004', '0xC0000094', 
-                              '0xC0000095', '0xC00000FD', '0xC0000135', '0xC0000139', 
-                              '0xC0000142', '0xE0434352', '0xC0000409']
+                known_codes = ['0xC0000005', '0x80000003', '0x80000004', '0xC0000094',
+                               '0xC0000095', '0xC00000FD', '0xC0000135', '0xC0000139',
+                               '0xC0000142', '0xE0434352', '0xC0000409']
                 for match in matches:
                     if match.upper() in known_codes:
                         return match.upper()
-                # If no known code found, take the first one
-                if matches:
-                    return matches[0].upper()
-        return None
-    except:
-        return None
+                return matches[0].upper()
+    except Exception:
+        pass
+    return None
 
 
 def extract_modules(dump_data):
     """Extract module names from minidump data"""
     try:
-        # Look for module names in the dump
-        dump_str = dump_data.decode('utf-8', errors='ignore')
-        
-        # Look for .dll and .exe files
-        module_pattern = r'([A-Za-z0-9_\-\.]+\.(dll|exe))'
-        matches = re.findall(module_pattern, dump_str)
-        
-        # Remove duplicates and system files
-        modules = []
-        system_files = ['ntdll.dll', 'kernel32.dll', 'user32.dll', 'gdi32.dll', 
-                       'msvcrt.dll', 'ole32.dll', 'oleaut32.dll', 'advapi32.dll']
-        
-        for match in matches:
-            module_name = match[0]
-            if module_name.lower() not in system_files and module_name not in modules:
-                modules.append(module_name)
-        
-        return modules[:20]  # Maximum 20 modules
-    except:
+        streams = parse_minidump_streams(dump_data)
+        modules = parse_modules_from_streams(dump_data, streams)
+        return [m['name'] for m in modules[:20]]
+    except Exception:
         return []
 
 
 def extract_system_info(dump_data):
     """Extract system information from minidump data"""
     try:
-        dump_str = dump_data.decode('utf-8', errors='ignore')
-        
-        system_info = {}
-        
-        # Look for OS version
-        os_patterns = [
-            r'Windows\s+(\d+\.\d+\.\d+)',
-            r'Windows\s+(\d+)',
-        ]
-        
-        for pattern in os_patterns:
-            match = re.search(pattern, dump_str)
-            if match:
-                system_info['os_version'] = match.group(1)
-                break
-        
-        # Look for build number
-        build_pattern = r'Build\s+(\d+)'
-        build_match = re.search(build_pattern, dump_str)
-        if build_match:
-            system_info['build_number'] = build_match.group(1)
-        
-        # Look for architecture
-        arch_patterns = [
-            r'x64',
-            r'x86',
-            r'ARM64',
-            r'ARM',
-        ]
-        
-        for pattern in arch_patterns:
-            if re.search(pattern, dump_str, re.IGNORECASE):
-                system_info['architecture'] = pattern.upper()
-                break
-        
-        return system_info
-    except:
-        return {}
+        streams = parse_minidump_streams(dump_data)
+        if 7 in streams:
+            rva = streams[7]['rva']
+            arch_val = struct.unpack_from('<H', dump_data, rva)[0]
+            arch_map = {0: 'X86', 5: 'ARM', 6: 'IA64', 9: 'X64', 12: 'ARM64'}
+            major = struct.unpack_from('<I', dump_data, rva + 8)[0]
+            minor = struct.unpack_from('<I', dump_data, rva + 12)[0]
+            build = struct.unpack_from('<I', dump_data, rva + 16)[0]
+            return {
+                'os_version': f"{major}.{minor}.{build}",
+                'architecture': arch_map.get(arch_val, 'UNKNOWN')
+            }
+    except Exception:
+        pass
+    return {}
 
 
 def analyze_dump(dump_file_path, ticket_number, analysis_folder):
