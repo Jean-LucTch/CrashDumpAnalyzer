@@ -7,6 +7,14 @@
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
 </head>
 <body>
+    {% if session.get('user') %}
+    <nav class="topbar" aria-label="User navigation">
+        <form method="post" action="{{ url_for('logout') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button type="submit" class="btn-logout" aria-label="{{ _('Logout') }}">{{ _('Logout') }}</button>
+        </form>
+    </nav>
+    {% endif %}
     <div id="overlay" class="overlay" onclick="toggleSettingsMenu()"></div>
     <!-- Einstellungen-Icon -->
     <div class="settings-icon" onclick="toggleSettingsMenu()" onkeydown="handleSettingsIconKeyDown(event)" role="button" tabindex="0" aria-label="{{ _('Settings') }}">

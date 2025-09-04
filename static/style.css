@@ -240,6 +240,30 @@ footer {
     background-color: #d32f2f;
 }
 
+/* --- Top bar / Logout button --- */
+.topbar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+}
+
+.btn-logout {
+    padding: 8px 12px;
+    background-color: #c0392b;
+    color: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: transform 0.08s ease, opacity 0.12s ease, background-color 0.12s ease;
+}
+
+.btn-logout:hover { opacity: 0.9; }
+.btn-logout:active { transform: translateY(1px); }
+.btn-logout:focus-visible { outline: 3px solid var(--heading-color); outline-offset: 2px; }
+
 /* Admin actions container: place buttons side by side */
 .admin-actions {
     display: flex;

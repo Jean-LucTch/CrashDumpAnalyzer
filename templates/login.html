@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="{{ get_locale() if get_locale is defined else 'en' }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ _('Sign in') if _ is defined else 'Sign in' }}</title>
+  <!-- CSS only. No JavaScript loaded. -->
+  <link rel="stylesheet" href="/static/styles.css">
+  <!--
+    Security notes (handled server-side):
+    - Use strong password hashing (e.g., bcrypt or argon2).
+    - Enforce rate limiting and login backoff/lockout to deter brute force.
+    - Set session cookies as Secure, HttpOnly, and SameSite=Strict/Lax.
+    - Return uniform error messages to avoid user enumeration.
+    - Log auth events server-side only (never passwords); never store tokens client-side.
+  -->
+  <style>
+    /* Inline style kept empty intentionally; all styles are in /static/styles.css */
+  </style>
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+</head>
+<body>
+  <!-- Skip link for keyboard users -->
+  <a class="skip-link" href="#main">{{ _('Skip to content') if _ is defined else 'Skip to content' }}</a>
+  <!-- Screen reader title; visually hidden in CSS -->
+  <h1 class="sr-only">{{ _('Sign in') if _ is defined else 'Sign in' }}</h1>
+  <!-- App logo using the favicon.ico -->
+  <img class="logo" width="64" height="64"
+       src="{{ url_for('static', filename='favicon.ico') }}"
+       alt="{{ _('App logo') if _ is defined else 'App logo' }}">
+  <main id="main" class="main">
+    <section class="card" aria-labelledby="card-title">
+      <header class="card-header">
+        <h2 id="card-title">{{ _('Sign in') if _ is defined else 'Sign in' }}</h2>
+      </header>
+
+      <!-- General error banner; message kept generic -->
+      <div class="error-banner" role="alert" aria-live="polite">
+        {% if error_message %}
+          <p>{{ _('Invalid email or password') if _ is defined else 'Invalid email or password' }}</p>
+        {% else %}
+          <p aria-hidden="true"></p>
+        {% endif %}
+      </div>
+
+      <form method="POST" action="{{ url_for('login') }}" novalidate>
+        {{ form.csrf_token }}
+
+        <div class="field">
+          <label for="email">{{ _('Email') if _ is defined else 'Email' }}</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            inputmode="email"
+            autocomplete="username"
+            required
+            aria-invalid="{{ 'true' if form is defined and form.email is defined and form.email.errors else 'false' }}"
+            aria-describedby="email-help email-error"
+            value="{{ form.email.data if form is defined and form.email is defined and form.email.data is not none else '' }}"
+          >
+          <div class="help-row">
+            <small id="email-help" class="help-text">{{ _('Use your company email') if _ is defined else 'Use your company email' }}</small>
+          </div>
+          <div id="email-error" class="field-error" aria-live="polite">
+            {% if form is defined and form.email is defined and form.email.errors %}
+              {% for e in form.email.errors %}
+                <p>{{ e }}</p>
+              {% endfor %}
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="password">{{ _('Password') if _ is defined else 'Password' }}</label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            autocomplete="current-password"
+            required
+            aria-invalid="{{ 'true' if form is defined and form.password is defined and form.password.errors else 'false' }}"
+            aria-describedby="password-error"
+          >
+          <div id="password-error" class="field-error" aria-live="polite">
+            {% if form is defined and form.password is defined and form.password.errors %}
+              {% for e in form.password.errors %}
+                <p>{{ e }}</p>
+              {% endfor %}
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="actions-row">
+          <label class="checkbox">
+            <input type="checkbox" id="remember" name="remember" value="1">
+            <span>{{ _('Remember me') if _ is defined else 'Remember me' }}</span>
+          </label>
+          <a class="muted-link" href="/forgot-password">{{ _('Forgot password?') if _ is defined else 'Forgot password?' }}</a>
+        </div>
+
+        <button class="btn primary" type="submit">{{ _('Sign in') if _ is defined else 'Sign in' }}</button>
+
+        <p class="subtle">
+          {{ _('No account?') if _ is defined else 'No account?' }}
+          <a href="/register">{{ _('Create account') if _ is defined else 'Create account' }}</a>
+        </p>
+      </form>
+    </section>
+  </main>
+</body>
+</html>
