@@ -97,6 +97,10 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <button type="submit" class="btn-clear">{{ _('Clear dump files') }}</button>
     </form>
+    <form method="post" action="{{ url_for('clear_tickets') }}" class="admin-form upload-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="btn-clear">{{ _('Delete all tickets (files + DB)') }}</button>
+    </form>
 
     <h2>{{ _('Tickets') }}</h2>
     {% if tickets %}
