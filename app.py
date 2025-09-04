@@ -216,7 +216,8 @@ def view_analysis(ticket_number):
         return render_template('analysis.html', 
                                ticket_number=ticket_number, 
                                analysis_content=analysis_content,
-                               ticket_timestamp=ticket_timestamp)
+                               ticket_timestamp=ticket_timestamp,
+                               version=VERSION)
     else:
         flash (_('Analysis report not found.'))
         return redirect(url_for('upload_file'))

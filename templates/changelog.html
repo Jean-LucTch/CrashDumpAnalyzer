@@ -1,15 +1,15 @@
 <!doctype html>
-<html lang="de">
+<html lang="{{ get_locale() }}">
 <head>
   <meta charset="UTF-8">
-  <title>Changelog - CrashDumpAnalyzer</title>
+  <title>{{ _('Changelog') }} - CrashDumpAnalyzer</title>
   <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
 </head>
 <body>
     <div id="overlay" class="overlay" onclick="toggleSettingsMenu()"></div>
     <!-- Einstellungen-Icon -->
-    <div class="settings-icon" onclick="toggleSettingsMenu()" onkeydown="handleSettingsIconKeydown(event)" role="button" tabindex="0" aria-label="Settings">
+    <div class="settings-icon" onclick="toggleSettingsMenu()" onkeydown="handleSettingsIconKeydown(event)" role="button" tabindex="0" aria-label="{{ _('Settings') }}">
         &#9881;
     </div>
 
@@ -22,6 +22,7 @@
             <a href="{{ url_for('set_language', language='en') }}">{{ _('English') }}</a>
             <a href="{{ url_for('set_language', language='de') }}">{{ _('Deutsch') }}</a>
             <a href="{{ url_for('set_language', language='nl') }}">{{ _('Dutch') }}</a>
+            <a href="{{ url_for('set_language', language='fr') }}">{{ _('Français') }}</a>
             <p>--------------------------------</p>
         </div>
         <!-- Theme-Umschalter -->
@@ -69,7 +70,7 @@
           }
        });
   </script>
-  <h1>Changelog</h1>
+  <h1>{{ _('Changelog') }}</h1>
   
   <div class="changelog-content">
     {{ changelog|safe }}
@@ -78,7 +79,7 @@
   <p><a href="{{ url_for('upload_file') }}">{{ _('Back to the main page') }}</a></p>
   
   <footer>
-    <p>&copy; 2025 CrashDumpAnalyzer by NickleLP | Version {{ version }}</p>
+    <p>&copy; 2025 CrashDumpAnalyzer by NickleLP | {{ _('Version') }} {{ version }}</p>
   </footer>
 </body>
 </html>
