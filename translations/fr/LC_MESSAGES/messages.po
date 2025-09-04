@@ -139,3 +139,36 @@ msgstr "Supprimer les fichiers dump"
 msgid "Dump files cleared."
 msgstr "Fichiers dump supprimés."
 
+
+# New UI strings for settings and theming
+msgid "Settings"
+msgstr "Paramètres"
+
+msgid "Select language:"
+msgstr "Sélectionner la langue :"
+
+msgid "Français"
+msgstr "Français"
+
+msgid "Select theme:"
+msgstr "Sélectionner le thème :"
+
+msgid "Dark Mode"
+msgstr "Mode sombre"
+
+# Page titles / headings
+msgid "Changelog"
+msgstr "Journal des modifications"
+
+msgid "Analysis"
+msgstr "Analyse"
+
+# Additional backend messages
+msgid "File is too large. Maximum size is 200 MB."
+msgstr "Fichier trop volumineux. La taille maximale est de 200 Mo."
+
+msgid "Invalid file path."
+msgstr "Chemin de fichier invalide."
+
+msgid "Invalid CSRF token."
+msgstr "Jeton CSRF invalide."
