@@ -93,10 +93,17 @@
     </form>
 
     <h2>{{ _('Administrator actions') }}</h2>
-    <form method="post" action="{{ url_for('clear_dumps') }}" class="admin-form upload-form">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <button type="submit" class="btn-clear">{{ _('Clear dump files') }}</button>
-    </form>
+    <!-- One card that holds both admin actions side-by-side -->
+    <div class="admin-form admin-actions">
+        <form method="post" action="{{ url_for('clear_dumps') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button type="submit" class="btn-clear">{{ _('Clear dump files') }}</button>
+        </form>
+        <form method="post" action="{{ url_for('clear_tickets') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button type="submit" class="btn-clear">{{ _('Delete all tickets (files + DB)') }}</button>
+        </form>
+    </div>
 
     <h2>{{ _('Tickets') }}</h2>
     {% if tickets %}

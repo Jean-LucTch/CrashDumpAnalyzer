@@ -245,6 +245,65 @@ def clear_dumps():
     flash(_('Dump files cleared.'))
     return redirect(url_for('upload_file'))
 
+
+@app.route('/clear_tickets', methods=['POST'])
+def clear_tickets():
+    """Delete all tickets: dump files, analysis files, and DB entries."""
+    form_token = request.form.get('csrf_token')
+    session_token = session.get('csrf_token')
+    if form_token is None or session_token is None:
+        flash(_('Invalid CSRF token.'))
+    if not form_token or not session_token or not secrets.compare_digest(session_token, form_token):
+        flash(_('Invalid CSRF token.'))
+        return redirect(url_for('upload_file'))
+
+    # Delete all dump files
+    upload_folder = app.config['UPLOAD_FOLDER']
+    try:
+        for name in os.listdir(upload_folder):
+            if name.lower().endswith('.dmp'):
+                file_path = os.path.join(upload_folder, name)
+                try:
+                    os.remove(file_path)
+                except OSError:
+                    pass
+    except FileNotFoundError:
+        pass
+
+    # Delete all analysis files
+    analysis_folder = app.config['ANALYSIS_FOLDER']
+    try:
+        for name in os.listdir(analysis_folder):
+            # Be conservative: only remove files that match our analysis naming pattern
+            if name.lower().startswith('analysis_') and name.lower().endswith('.txt'):
+                file_path = os.path.join(analysis_folder, name)
+                try:
+                    os.remove(file_path)
+                except OSError:
+                    pass
+    except FileNotFoundError:
+        pass
+
+    # Clear DB entries
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        c.execute('DELETE FROM tickets')
+        conn.commit()
+        conn.close()
+    except sqlite3.Error:
+        # If DB operation fails, still proceed with what we could delete
+        pass
+
+    # Reset in-memory tickets
+    try:
+        tickets.clear()
+    except Exception:
+        pass
+
+    flash(_('All tickets and related files have been deleted.'))
+    return redirect(url_for('upload_file'))
+
     
 if __name__ == '__main__':
     if getattr(sys, 'frozen', False):

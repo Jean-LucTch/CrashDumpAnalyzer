@@ -172,3 +172,10 @@ msgstr "Chemin de fichier invalide."
 
 msgid "Invalid CSRF token."
 msgstr "Jeton CSRF invalide."
+
+# New admin actions
+msgid "Delete all tickets (files + DB)"
+msgstr "Supprimer tous les tickets (fichiers + BD)"
+
+msgid "All tickets and related files have been deleted."
+msgstr "Tous les tickets et les fichiers associes ont ete supprimes."

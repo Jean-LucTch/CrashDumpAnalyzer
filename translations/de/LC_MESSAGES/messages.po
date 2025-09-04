@@ -142,3 +142,10 @@ msgstr "Dump-Dateien löschen"
 msgid "Dump files cleared."
 msgstr "Dump-Dateien gelöscht."
 
+#: templates/index.html:100
+msgid "Delete all tickets (files + DB)"
+msgstr "Alle Tickets löschen (Dateien + DB)"
+
+#: app.py:???
+msgid "All tickets and related files have been deleted."
+msgstr "Alle Tickets und zugehörigen Dateien wurden gelöscht."
