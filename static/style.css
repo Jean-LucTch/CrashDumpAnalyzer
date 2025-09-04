@@ -240,6 +240,22 @@ footer {
     background-color: #d32f2f;
 }
 
+/* Admin actions container: place buttons side by side */
+.admin-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+/* Remove inner form card styling inside the admin actions container */
+.admin-actions form {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
+}
+
 /* Stil für die Drop-Zone */
 #drop-zone {
     border: 2px dashed var(--border-color);
