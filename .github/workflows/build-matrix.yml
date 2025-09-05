@@ -1,0 +1,121 @@
+name: Build (Windows + Linux)
+
+on:
+  push:
+  pull_request:
+  tags:
+    - 'v*'
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+        python-version: [ '3.11' ]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+            ~\AppData\Local\pip\Cache
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip wheel
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install pyinstaller
+        shell: bash
+
+      - name: Run tests (if present)
+        run: |
+          if python -c "import pytest" 2>/dev/null; then
+            pytest -q || exit 1
+          else
+            echo "pytest not installed, skipping tests"
+          fi
+        shell: bash
+
+      - name: Build with PyInstaller
+        run: |
+          pyinstaller --noconfirm --clean \
+            --onefile \
+            --name CrashDumpAnalyzer \
+            --add-data "templates:templates" \
+            --add-data "static:static" \
+            app.py
+        shell: bash
+
+      - name: Package artifact
+        run: |
+          mkdir -p out
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            powershell -Command "Compress-Archive -Path dist/CrashDumpAnalyzer.exe -DestinationPath out/CrashDumpAnalyzer-windows-x64.zip"
+          else
+            tar -C dist -czf out/CrashDumpAnalyzer-linux-x64.tar.gz CrashDumpAnalyzer
+          fi
+        shell: bash
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ runner.os }}-artifact
+          path: out/*
+
+  release:
+    name: Release on tag
+    needs: [build]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Windows asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./artifacts/Windows-artifact/CrashDumpAnalyzer-windows-x64.zip
+          asset_name: CrashDumpAnalyzer-windows-x64.zip
+          asset_content_type: application/zip
+
+      - name: Upload Linux asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./artifacts/Linux-artifact/CrashDumpAnalyzer-linux-x64.tar.gz
+          asset_name: CrashDumpAnalyzer-linux-x64.tar.gz
+          asset_content_type: application/gzip
+
