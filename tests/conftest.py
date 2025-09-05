@@ -31,6 +31,9 @@ def app_module(tmp_path, monkeypatch):
                 return func
             return decorator
 
+        def after_request(self, func):
+            return func
+
     flask_stub.Flask = Flask
     flask_stub.request = None
     flask_stub.redirect = lambda *a, **k: None
@@ -38,7 +41,11 @@ def app_module(tmp_path, monkeypatch):
     flask_stub.render_template = lambda *a, **k: ""
     flask_stub.flash = lambda *a, **k: None
     flask_stub.send_from_directory = lambda *a, **k: None
+    def _abort(code):
+        raise RuntimeError(f"abort {code}")
+
     flask_stub.session = {}
+    flask_stub.abort = _abort
     monkeypatch.setitem(sys.modules, "flask", flask_stub)
 
     # flask_babel stub
