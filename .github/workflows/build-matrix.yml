@@ -2,9 +2,11 @@ name: Build (Windows + Linux)
 
 on:
   push:
+    branches:
+      - '**'
+    tags:
+      - 'v*'
   pull_request:
-  tags:
-    - 'v*'
 
 jobs:
   build:
@@ -45,7 +47,12 @@ jobs:
       - name: Run tests (if present)
         run: |
           if python -c "import pytest" 2>/dev/null; then
-            pytest -q || exit 1
+            set +e
+            pytest -q
+            code=$?
+            # Treat exit code 5 (no tests collected) as success
+            if [ "$code" -ne 0 ] && [ "$code" -ne 5 ]; then exit "$code"; fi
+            set -e
           else
             echo "pytest not installed, skipping tests"
           fi
@@ -53,11 +60,13 @@ jobs:
 
       - name: Build with PyInstaller
         run: |
+          sep=":"
+          if [ "${{ runner.os }}" = "Windows" ]; then sep=";"; fi
           pyinstaller --noconfirm --clean \
             --onefile \
             --name CrashDumpAnalyzer \
-            --add-data "templates:templates" \
-            --add-data "static:static" \
+            --add-data "templates${sep}templates" \
+            --add-data "static${sep}static" \
             app.py
         shell: bash
 
@@ -118,4 +127,3 @@ jobs:
           asset_path: ./artifacts/Linux-artifact/CrashDumpAnalyzer-linux-x64.tar.gz
           asset_name: CrashDumpAnalyzer-linux-x64.tar.gz
           asset_content_type: application/gzip
-
