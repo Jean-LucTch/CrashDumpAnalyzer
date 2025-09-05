@@ -241,19 +241,34 @@ footer {
 }
 
 /* --- Top bar / Logout button --- */
+/* Place logout button next to the settings gear (top-right) */
 .topbar {
     display: flex;
     justify-content: flex-end;
     align-items: center;
     gap: 8px;
-    padding: 10px 16px;
+    position: fixed;
+    top: 8px;
+    right: 46px; /* sits just to the left of the settings icon */
+    padding: 0; /* avoid adding vertical gap */
+    background: transparent;
+    z-index: 1000;
+}
+
+/* Remove the generic form card styling inside the topbar */
+.topbar form {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
 }
 
 .btn-logout {
     padding: 8px 12px;
     background-color: #c0392b;
     color: #fff;
-    border: 1px solid var(--border-color);
+    border: none;
     border-radius: 6px;
     cursor: pointer;
     font-weight: 600;
@@ -348,7 +363,7 @@ footer {
 /* Einstellungen-Icon */
 .settings-icon {
     position: fixed;
-    top: 10px;
+    top: 8px;
     right: 10px;
     cursor: pointer;
     font-size: 24px;
@@ -361,7 +376,7 @@ footer {
 
 .settings-menu {
     position: fixed;
-    top: 50px;
+    top: 46px;
     right: 10px;
     background-color: var(--background-color);
     border: 1px solid var(--border-color);
@@ -424,5 +439,10 @@ footer {
     background-color: rgba(0, 0, 0, 0.5); /* Halbtransparentes Schwarz */
     display: none; /* Initial versteckt */
     z-index: 998; /* Unterhalb des Menüs, aber über dem Rest */
+}
+
+/* Tighten the gap above the first page title */
+body > h1:first-of-type {
+    margin-top: 8px;
 }
 
