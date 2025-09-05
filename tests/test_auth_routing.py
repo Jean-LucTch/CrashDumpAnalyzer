@@ -20,6 +20,8 @@ def load_real_app(tmp_path, monkeypatch):
     repo_root = Path(__file__).resolve().parents[1]
     app_py = str(repo_root / "app.py")
     spec = spec_from_file_location("real_app_module", app_py)
+    if spec is None:
+        raise ImportError(f"Could not load spec for {app_py}")
     mod = module_from_spec(spec)
     spec.loader.exec_module(mod)  # type: ignore[attr-defined]
 
