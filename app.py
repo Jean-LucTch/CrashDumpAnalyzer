@@ -145,7 +145,7 @@ def upload_file():
         if file.filename == '':
             flash (_('No file selected'))
             return redirect(validate_url(request.url))
-        if file and file.filename and file.filename.lower().endswith('.dmp'):
+        if file and file.filename.lower().endswith('.dmp'):
             ticket_number = get_next_ticket_number()
 
             # Save the file
