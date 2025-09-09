@@ -11,6 +11,8 @@ on:
 jobs:
   build:
     name: Build on ${{ matrix.os }}
+    permissions:
+      contents: read
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -88,6 +90,8 @@ jobs:
 
   release:
     name: Release on tag
+    permissions:
+      contents: write
     needs: [build]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
