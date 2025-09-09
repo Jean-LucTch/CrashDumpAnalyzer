@@ -25,7 +25,7 @@ app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['ANALYSIS_FOLDER'] = 'analyses'
 app.config['BABEL_DEFAULT_LOCALE'] = 'en'
 app.config['BABEL_SUPPORTED_LOCALES'] = ['en', 'de', 'nl', 'fr']
-app.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024  # 200 MB upload limit
+app.config['MAX_CONTENT_LENGTH'] = 900 * 1024 * 1024  # 900 MB upload limit
 DB_PATH = os.environ.get('TICKET_DB_PATH', 'tickets.db')
 
 VALID_REDIRECTS = [
@@ -63,7 +63,7 @@ babel = Babel(app, locale_selector=get_locale)
 
 @app.errorhandler(RequestEntityTooLarge)
 def handle_large_file(error):
-    flash(_('File is too large. Maximum size is 200 MB.'))
+    flash(_('File is too large. Maximum size is 900 MB.'))
     return redirect(url_for('upload_file')), 413
 
 @app.route('/set_language/<language>')
