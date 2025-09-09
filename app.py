@@ -145,7 +145,7 @@ def upload_file():
         if file.filename == '':
             flash (_('No file selected'))
             return redirect(validate_url(request.url))
-        if file and file.filename.lower().endswith('.dmp'):
+        if file and file.filename and file.filename.lower().endswith('.dmp'):
             ticket_number = get_next_ticket_number()
 
             # Save the file
@@ -181,7 +181,7 @@ def changelog():
     # Determine the base directory
     if getattr(sys, 'frozen', False):
         # Application is bundled as an executable
-        application_path = sys._MEIPASS
+        application_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
     else:
         # Application is running normally
         application_path = os.path.dirname(os.path.abspath(__file__))
