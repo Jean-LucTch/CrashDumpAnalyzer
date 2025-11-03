@@ -185,6 +185,30 @@ def apply_no_store(resp):
 def _in_production():
     return str(_env_mode).lower() == 'production'
 
+
+def _get_configured_credentials():
+    """Return the configured admin credentials if provided."""
+    username = app.config.get('ADMIN_USER') or os.environ.get('APP_ADMIN_USER')
+    password = app.config.get('ADMIN_PASSWORD') or os.environ.get('APP_ADMIN_PASSWORD')
+    if username is not None:
+        username = str(username)
+    if password is not None:
+        password = str(password)
+    return username, password
+
+
+def _validate_credentials(email, password):
+    if _in_production():
+        expected_user, expected_password = _get_configured_credentials()
+        if not expected_user or not expected_password:
+            return False
+        return (
+            secrets.compare_digest(email, expected_user)
+            and secrets.compare_digest(password, expected_password)
+        )
+    return email == 'admin' and password == 'password'
+
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     # If already authenticated, go to the protected index
@@ -207,12 +231,7 @@ def login():
         password = request.form.get('password') or ''
         remember = request.form.get('remember') is not None
 
-        if _in_production():
-            # TODO: validate against database or identity provider
-            valid = False
-        else:
-            # Development mode: accept only hardcoded credentials
-            valid = (email == 'admin' and password == 'password')
+        valid = _validate_credentials(email, password)
 
         if valid:
             session.clear()
@@ -353,6 +372,9 @@ def view_analysis(ticket_number):
 @app.route('/clear_dumps', methods=['POST'])
 def clear_dumps():
     """Delete all uploaded .dmp files but keep analyses and tickets."""
+    if not session.get('user'):
+        flash(_('You must be signed in to perform this action.'))
+        return redirect(url_for('login'))
     form_token = request.form.get('csrf_token')
     session_token = session.get('csrf_token')
     if form_token is None or session_token is None:
@@ -376,6 +398,9 @@ def clear_dumps():
 @app.route('/clear_tickets', methods=['POST'])
 def clear_tickets():
     """Delete all tickets: dump files, analysis files, and DB entries."""
+    if not session.get('user'):
+        flash(_('You must be signed in to perform this action.'))
+        return redirect(url_for('login'))
     form_token = request.form.get('csrf_token')
     session_token = session.get('csrf_token')
     if form_token is None or session_token is None:
