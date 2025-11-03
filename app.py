@@ -39,6 +39,7 @@ _env_mode = os.getenv('APP_ENV', os.getenv('FLASK_ENV', os.getenv('ENV', os.gete
 if str(_env_mode).lower() == 'production':
     app.config['SESSION_COOKIE_SECURE'] = True
 
+
 VALID_REDIRECTS = [
     '/', 
     '/changelog', 
@@ -93,7 +94,7 @@ babel = Babel(app, locale_selector=get_locale)
 
 @app.errorhandler(RequestEntityTooLarge)
 def handle_large_file(error):
-    flash(_('File is too large. Maximum size is 200 MB.'))
+    flash(_('File is too large. Maximum size is 900 MB.'))
     return redirect(url_for('upload_file')), 413
 
 @app.route('/set_language/<language>')
@@ -307,7 +308,7 @@ def changelog():
     # Determine the base directory
     if getattr(sys, 'frozen', False):
         # Application is bundled as an executable
-        application_path = sys._MEIPASS
+        application_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
     else:
         # Application is running normally
         application_path = os.path.dirname(os.path.abspath(__file__))
