@@ -1,6 +1,7 @@
 import os
 import secrets
-from flask import Flask, request, redirect, url_for, render_template, flash, send_from_directory, session
+from flask import Flask, request, redirect, url_for, render_template, flash, send_from_directory, session, abort
+from markupsafe import Markup
 from werkzeug.exceptions import RequestEntityTooLarge
 import markdown
 from datetime import datetime
@@ -21,12 +22,23 @@ except ImportError:  # pragma: no cover - Waitress not needed in tests
 app = Flask(__name__)
 app.secret_key = '578493092754320oio6547a32653402tzu174321045d414d5g4d5g314d5644315¨ü6448¨$34ö14$üöäiä643*914*64*op416*43146*443*i1*643i*16*443*146*4431*464*31464i4315p453145oi6443165464531'
 app.jinja_env.add_extension('jinja2.ext.i18n')
+# Prefer SECRET_KEY from environment when provided
+app.secret_key = os.environ.get('SECRET_KEY', app.secret_key)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['ANALYSIS_FOLDER'] = 'analyses'
 app.config['BABEL_DEFAULT_LOCALE'] = 'en'
 app.config['BABEL_SUPPORTED_LOCALES'] = ['en', 'de', 'nl', 'fr']
-app.config['MAX_CONTENT_LENGTH'] = 900 * 1024 * 1024  # 900 MB upload limit
+app.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024  # 200 MB upload limit
 DB_PATH = os.environ.get('TICKET_DB_PATH', 'tickets.db')
+
+# Session & cookie security (server-side configuration)
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Strict'
+# In production, require HTTPS for session cookies
+_env_mode = os.getenv('APP_ENV', os.getenv('FLASK_ENV', os.getenv('ENV', os.getenv('PYTHON_ENV', 'development'))))
+if str(_env_mode).lower() == 'production':
+    app.config['SESSION_COOKIE_SECURE'] = True
+
 
 VALID_REDIRECTS = [
     '/', 
@@ -51,6 +63,25 @@ def get_csrf_token():
         token = secrets.token_hex(16)
         session['csrf_token'] = token
     return token
+
+# Minimal helper to provide a Jinja-friendly "form" with csrf_token
+# without bringing in Flask-WTF for this example. If Flask-WTF is
+# present, you can replace this with the real form.
+class _Field:
+    def __init__(self, errors=None, data=None):
+        self.errors = errors or []
+        self.data = data
+
+class _SimpleForm:
+    def __init__(self, csrf_token_html, email_errors=None, password_errors=None, email_data=None):
+        self.csrf_token = Markup(csrf_token_html)
+        self.email = _Field(email_errors, email_data)
+        self.password = _Field(password_errors)
+
+def _build_simple_form(email_errors=None, password_errors=None, email_data=None):
+    token = get_csrf_token()
+    csrf_html = f'<input type="hidden" name="csrf_token" value="{token}">'
+    return _SimpleForm(csrf_html, email_errors, password_errors, email_data)
 
 def get_locale():
     # Check if a language is stored in the session
@@ -135,8 +166,135 @@ tickets = load_tickets_from_db()
 def inject_get_locale():
     return dict(get_locale=get_locale, csrf_token=get_csrf_token())
 
+# Prevent caching on authenticated responses
+@app.after_request
+def apply_no_store(resp):
+    try:
+        if session.get('user') and not request.path.startswith('/static/'):
+            resp.headers['Cache-Control'] = 'no-store'
+            resp.headers['Pragma'] = 'no-cache'
+            resp.headers['Expires'] = '0'
+    except Exception:
+        pass
+    return resp
+
+# -------------------------
+# Authentication endpoints
+# -------------------------
+
+def _in_production():
+    return str(_env_mode).lower() == 'production'
+
+
+def _get_configured_credentials():
+    """Return the configured admin credentials if provided."""
+    username = app.config.get('ADMIN_USER') or os.environ.get('APP_ADMIN_USER')
+    password = app.config.get('ADMIN_PASSWORD') or os.environ.get('APP_ADMIN_PASSWORD')
+    if username is not None:
+        username = str(username)
+    if password is not None:
+        password = str(password)
+    return username, password
+
+
+def _validate_credentials(email, password):
+    if _in_production():
+        expected_user, expected_password = _get_configured_credentials()
+        if not expected_user or not expected_password:
+            return False
+        return (
+            secrets.compare_digest(email, expected_user)
+            and secrets.compare_digest(password, expected_password)
+        )
+    return email == 'admin' and password == 'password'
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    # If already authenticated, go to the protected index
+    if session.get('user'):
+        return redirect(url_for('upload_file'))
+
+    error_message = None
+
+    if request.method == 'POST':
+        # CSRF check using the same token the template includes
+        form_token = request.form.get('csrf_token')
+        if not form_token or not secrets.compare_digest(session.get('csrf_token', ''), form_token):
+            error_message = _('Invalid email or password') if '_' in globals() else 'Invalid email or password'
+            form = _build_simple_form(email_errors=[error_message],
+                                      password_errors=[error_message],
+                                      email_data=request.form.get('email', ''))
+            return render_template('login.html', form=form, error_message=error_message)
+
+        email = (request.form.get('email') or '').strip()
+        password = request.form.get('password') or ''
+        remember = request.form.get('remember') is not None
+
+        valid = _validate_credentials(email, password)
+
+        if valid:
+            session.clear()
+            session['user'] = email
+            session['sid'] = secrets.token_urlsafe(16)
+            session['csrf_token'] = secrets.token_urlsafe(32)
+            session.permanent = bool(remember)
+            return redirect(url_for('upload_file'))
+        else:
+            # Generic message to avoid user enumeration
+            error_message = _('Invalid email or password') if '_' in globals() else 'Invalid email or password'
+            form = _build_simple_form(email_errors=[error_message],
+                                      password_errors=[error_message],
+                                      email_data=email)
+            return render_template('login.html', form=form, error_message=error_message)
+
+    # GET
+    form = _build_simple_form()
+    return render_template('login.html', form=form, error_message=None)
+
+
+@app.route('/forgot-password')
+def forgot_password():
+    page_title = _('Forgot password') if '_' in globals() else 'Forgot password'
+    return render_template('coming_soon.html', page_title=page_title)
+
+
+@app.route('/register')
+def register():
+    page_title = _('Create account') if '_' in globals() else 'Create account'
+    return render_template('coming_soon.html', page_title=page_title)
+
+
+@app.route('/logout', methods=['POST'])
+def logout():
+    # POST-only logout with CSRF verification
+    form_token = request.form.get('csrf_token', '')
+    sess_token = session.get('csrf_token')
+    if not sess_token or not form_token or not secrets.compare_digest(sess_token, form_token):
+        abort(400)
+
+    session.clear()
+    resp = redirect(url_for('login'))
+    try:
+        cookie_name = app.config.get('SESSION_COOKIE_NAME', 'session')
+        resp.delete_cookie(cookie_name)
+    except Exception:
+        pass
+    return resp
+
+
+@app.route('/index', methods=['GET', 'POST'])
+def protected_index():
+    # Keep /index as an alias entry point after login
+    if not session.get('user'):
+        return redirect(url_for('login'))
+    return redirect(url_for('upload_file'))
+
 @app.route('/', methods=['GET', 'POST'])
 def upload_file():
+    # Require authentication for the main application
+    if not session.get('user'):
+        return redirect(url_for('login'))
     if request.method == 'POST':
         if 'file' not in request.files:
             flash (_('No file selected')) 
@@ -226,6 +384,9 @@ def view_analysis(ticket_number):
 @app.route('/clear_dumps', methods=['POST'])
 def clear_dumps():
     """Delete all uploaded .dmp files but keep analyses and tickets."""
+    if not session.get('user'):
+        flash(_('You must be signed in to perform this action.'))
+        return redirect(url_for('login'))
     form_token = request.form.get('csrf_token')
     session_token = session.get('csrf_token')
     if form_token is None or session_token is None:
@@ -249,6 +410,9 @@ def clear_dumps():
 @app.route('/clear_tickets', methods=['POST'])
 def clear_tickets():
     """Delete all tickets: dump files, analysis files, and DB entries."""
+    if not session.get('user'):
+        flash(_('You must be signed in to perform this action.'))
+        return redirect(url_for('login'))
     form_token = request.form.get('csrf_token')
     session_token = session.get('csrf_token')
     if form_token is None or session_token is None:

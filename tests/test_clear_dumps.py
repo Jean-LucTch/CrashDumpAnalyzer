@@ -16,6 +16,7 @@ def test_clear_dumps(app_module, tmp_path):
     # set CSRF tokens for stubbed request and session
     token = 'testtoken'
     app_module.session['csrf_token'] = token
+    app_module.session['user'] = 'admin'
     app_module.request = types.SimpleNamespace(form={'csrf_token': token})
 
     # call the function
