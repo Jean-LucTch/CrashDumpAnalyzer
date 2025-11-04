@@ -253,6 +253,18 @@ def login():
     return render_template('login.html', form=form, error_message=None)
 
 
+@app.route('/forgot-password')
+def forgot_password():
+    page_title = _('Forgot password') if '_' in globals() else 'Forgot password'
+    return render_template('coming_soon.html', page_title=page_title)
+
+
+@app.route('/register')
+def register():
+    page_title = _('Create account') if '_' in globals() else 'Create account'
+    return render_template('coming_soon.html', page_title=page_title)
+
+
 @app.route('/logout', methods=['POST'])
 def logout():
     # POST-only logout with CSRF verification

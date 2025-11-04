@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="{{ get_locale() if get_locale is defined else 'en' }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ page_title }}</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+</head>
+<body>
+  <a class="skip-link" href="#main">{{ _('Skip to content') if _ is defined else 'Skip to content' }}</a>
+  <img class="logo" width="64" height="64"
+       src="{{ url_for('static', filename='favicon.ico') }}"
+       alt="{{ _('App logo') if _ is defined else 'App logo' }}">
+  <main id="main" class="main">
+    <section class="card" aria-labelledby="card-title">
+      <header class="card-header">
+        <h2 id="card-title">{{ page_title }}</h2>
+      </header>
+      <div class="card-body">
+        {% set default_message = _('This feature is coming soon. Please check back later.') if _ is defined else 'This feature is coming soon. Please check back later.' %}
+        <p>{{ message if message is defined else default_message }}</p>
+      </div>
+      <div class="actions-row">
+        <a class="btn primary" href="{{ url_for('login') }}">{{ _('Back to sign in') if _ is defined else 'Back to sign in' }}</a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
