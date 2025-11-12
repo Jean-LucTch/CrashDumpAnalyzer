@@ -104,25 +104,6 @@ def get_exception_description(code):
     return _('Unknown error - Unrecognized exception code')
 
 
-def is_valid_text(text):
-    """Check if text contains valid printable characters"""
-    if not text:
-        return False
-    
-    # Check for control characters and other invalid characters
-    invalid_chars = set('\x00\x01\x02\x03\x04\x05\x06\x07\x08\x0b\x0c\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f')
-    
-    # If more than 30% of characters are invalid, consider it garbage
-    invalid_count = sum(1 for c in text if c in invalid_chars)
-    if invalid_count > len(text) * 0.3:
-        return False
-    
-    # Check if text is too short or too long
-    if len(text) < 1 or len(text) > 200:
-        return False
-    
-    return True
-
 def parse_minidump_streams(dump_data):
     """Parse the minidump header and return available streams"""
     try:
