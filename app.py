@@ -110,51 +110,57 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['ANALYSIS_FOLDER'], exist_ok=True)
 
 # Database functions for ticket persistence
-def init_db():
+from contextlib import contextmanager
+
+@contextmanager
+def get_db_connection():
+    """Context manager for database connections to ensure proper cleanup"""
     conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS tickets (
-                    ticket_number INTEGER PRIMARY KEY,
-                    exe_name TEXT,
-                    crash_reason TEXT,
-                    analysis_file TEXT,
-                    timestamp TEXT
-                )''')
-    conn.commit()
-    conn.close()
+    try:
+        yield conn
+    finally:
+        conn.close()
+
+
+def init_db():
+    with get_db_connection() as conn:
+        c = conn.cursor()
+        c.execute('''CREATE TABLE IF NOT EXISTS tickets (
+                        ticket_number INTEGER PRIMARY KEY,
+                        exe_name TEXT,
+                        crash_reason TEXT,
+                        analysis_file TEXT,
+                        timestamp TEXT
+                    )''')
+        conn.commit()
 
 
 def load_tickets_from_db():
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute('SELECT ticket_number, exe_name, crash_reason, analysis_file, timestamp FROM tickets')
-    rows = c.fetchall()
-    conn.close()
-    loaded = {row[0]: {
+    with get_db_connection() as conn:
+        c = conn.cursor()
+        c.execute('SELECT ticket_number, exe_name, crash_reason, analysis_file, timestamp FROM tickets')
+        rows = c.fetchall()
+    return {row[0]: {
         'exe_name': row[1],
         'crash_reason': row[2],
         'analysis_file': row[3],
         'timestamp': row[4]
     } for row in rows}
-    return loaded
 
 
 def get_next_ticket_number():
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute('SELECT IFNULL(MAX(ticket_number), 0) + 1 FROM tickets')
-    next_ticket = c.fetchone()[0]
-    conn.close()
-    return next_ticket
+    with get_db_connection() as conn:
+        c = conn.cursor()
+        c.execute('SELECT IFNULL(MAX(ticket_number), 0) + 1 FROM tickets')
+        return c.fetchone()[0]
 
 
 def save_ticket_to_db(ticket_number, ticket):
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute('INSERT INTO tickets (ticket_number, exe_name, crash_reason, analysis_file, timestamp) VALUES (?, ?, ?, ?, ?)',
-              (ticket_number, ticket['exe_name'], ticket['crash_reason'], ticket['analysis_file'], ticket['timestamp']))
-    conn.commit()
-    conn.close()
+    with get_db_connection() as conn:
+        c = conn.cursor()
+        c.execute('INSERT INTO tickets (ticket_number, exe_name, crash_reason, analysis_file, timestamp) VALUES (?, ?, ?, ?, ?)',
+                  (ticket_number, ticket['exe_name'], ticket['crash_reason'], ticket['analysis_file'], ticket['timestamp']))
+        conn.commit()
 
 
 init_db()
@@ -450,11 +456,10 @@ def clear_tickets():
 
     # Clear DB entries
     try:
-        conn = sqlite3.connect(DB_PATH)
-        c = conn.cursor()
-        c.execute('DELETE FROM tickets')
-        conn.commit()
-        conn.close()
+        with get_db_connection() as conn:
+            c = conn.cursor()
+            c.execute('DELETE FROM tickets')
+            conn.commit()
     except sqlite3.Error:
         # If DB operation fails, still proceed with what we could delete
         pass
