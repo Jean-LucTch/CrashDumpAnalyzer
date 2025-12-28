@@ -41,9 +41,31 @@ def validate_url(url):
     return '/'
 
 def is_safe_url(target):
+    """
+    Validate that the target URL is safe to redirect to.
+
+    A URL is considered safe if it:
+    - Uses http/https when a scheme is present, and
+    - Has no netloc (relative URL) or the same netloc as the current request.
+    Backslashes are stripped to avoid browser-specific interpretations.
+    """
+    if not target:
+        return False
+    # Normalize backslashes to avoid bypasses like "https:\\evil.com"
+    target = target.replace('\\', '')
     ref_url = urlparse(request.host_url)
     test_url = urlparse(target)
-    return test_url.scheme in ('http', 'https') and ref_url.netloc == test_url.netloc
+
+    # If a scheme is present, it must be http or https
+    if test_url.scheme and test_url.scheme not in ('http', 'https'):
+        return False
+
+    # If netloc is present, it must match the current host
+    if test_url.netloc and test_url.netloc != ref_url.netloc:
+        return False
+
+    # Relative URLs (no scheme, no netloc) are allowed
+    return True
 
 def get_csrf_token():
     token = session.get('csrf_token')
