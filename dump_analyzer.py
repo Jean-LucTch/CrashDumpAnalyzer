@@ -347,18 +347,51 @@ def extract_modules(dump_data):
         return []
 
 
+def get_platform_name(platform_id):
+    """Return a readable OS/platform name based on the minidump platform id."""
+    platform_map = {
+        0: 'Windows (Win32s)',
+        1: 'Windows (Windows 9x)',
+        2: 'Windows (NT)',
+        3: 'Windows (CE)',
+        0x8000: 'Unix',
+        0x8101: 'macOS',
+        0x8102: 'iOS',
+        0x8201: 'Linux',
+        0x8202: 'Solaris',
+        0x8203: 'Android',
+        0x8204: 'NaCl',
+        0x8205: 'PlayStation 3',
+        0x8206: 'AIX',
+        0x8207: 'Haiku',
+        0x8208: 'Minix',
+        0x8209: 'OpenBSD',
+    }
+    if platform_id in platform_map:
+        return platform_map[platform_id]
+    if platform_id < 0x8000:
+        return f"Windows (platform 0x{platform_id:X})"
+    return f"Unix-like (platform 0x{platform_id:X})"
+
+
 def extract_system_info(dump_data):
     """Extract system information from minidump data"""
     try:
         streams = parse_minidump_streams(dump_data)
         if 7 in streams:
             rva = streams[7]['rva']
+            size = streams[7].get('size', 0)
+            # Need at least up to PlatformId (offset 20) inclusive
+            if rva + 24 > len(dump_data) or size < 24:
+                return {}
             arch_val = struct.unpack_from('<H', dump_data, rva)[0]
             arch_map = {0: 'X86', 5: 'ARM', 6: 'IA64', 9: 'X64', 12: 'ARM64'}
             major = struct.unpack_from('<I', dump_data, rva + 8)[0]
             minor = struct.unpack_from('<I', dump_data, rva + 12)[0]
             build = struct.unpack_from('<I', dump_data, rva + 16)[0]
+            platform_id = struct.unpack_from('<I', dump_data, rva + 20)[0]
             return {
+                'operating_system': get_platform_name(platform_id),
                 'os_version': f"{major}.{minor}.{build}",
                 'architecture': arch_map.get(arch_val, 'UNKNOWN')
             }
