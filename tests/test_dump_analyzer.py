@@ -2,6 +2,7 @@ import builtins
 import sys
 import types
 import os
+import struct
 
 import pytest
 
@@ -71,3 +72,34 @@ def test_analyze_dump_with_cdb(analyzer_module, monkeypatch, tmp_path):
     exe_name, crash_reason = analyzer_module.analyze_dump(str(fake_dump_path), 1, str(tmp_path))
     assert exe_name == 'test.exe'
     assert '0xC0000005' in crash_reason
+
+
+def _build_minidump_with_system_info(platform_id):
+    """Create a minimal minidump byte sequence containing a SYSTEM_INFO stream."""
+    header_size = 32
+    dir_rva = header_size
+    sysinfo_rva = dir_rva + 12
+    sysinfo_size = 24  # Enough to include platform id
+    total_size = sysinfo_rva + sysinfo_size
+    dump_data = bytearray(total_size)
+
+    struct.pack_into('<IIIIIIQ', dump_data, 0, 0x504D444D, 0, 1, dir_rva, 0, 0, 0)
+    struct.pack_into('<III', dump_data, dir_rva, 7, sysinfo_size, sysinfo_rva)
+    struct.pack_into('<H', dump_data, sysinfo_rva, 9)  # Architecture X64
+    struct.pack_into('<I', dump_data, sysinfo_rva + 8, 10)  # Major version
+    struct.pack_into('<I', dump_data, sysinfo_rva + 12, 0)  # Minor version
+    struct.pack_into('<I', dump_data, sysinfo_rva + 16, 19045)  # Build number
+    struct.pack_into('<I', dump_data, sysinfo_rva + 20, platform_id)
+    return bytes(dump_data)
+
+
+@pytest.mark.parametrize("platform_id, expected_os", [
+    (2, 'Windows (NT)'),
+    (0x8201, 'Linux'),
+])
+def test_extract_system_info_includes_platform(analyzer_module, platform_id, expected_os):
+    dump_data = _build_minidump_with_system_info(platform_id)
+    info = analyzer_module.extract_system_info(dump_data)
+    assert info['operating_system'] == expected_os
+    assert info['os_version'] == '10.0.19045'
+    assert info['architecture'] == 'X64'
